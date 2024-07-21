@@ -9,14 +9,26 @@ const (
 	RightParen TokenType = "RIGHT_PAREN"
 	LeftBrace  TokenType = "LEFT_BRACE"
 	RightBrace TokenType = "RIGHT_BRACE"
+	Plus       TokenType = "PLUS"
+	Minus      TokenType = "MINUS"
+	Star       TokenType = "STAR"
+	Dot        TokenType = "DOT"
+	Comma      TokenType = "COMMA"
+	Semicolon  TokenType = "SEMICOLON"
 	EOF        TokenType = "EOF"
 )
 
 var singleCharTokenTypes = map[string]TokenType{
-	"(": TokenType(LeftParen),
-	")": TokenType(RightParen),
-	"{": TokenType(LeftBrace),
-	"}": TokenType(RightBrace),
+	"(": LeftParen,
+	")": RightParen,
+	"{": LeftBrace,
+	"}": RightBrace,
+	"+": Plus,
+	"-": Minus,
+	"*": Star,
+	".": Dot,
+	",": Comma,
+	";": Semicolon,
 }
 
 type Token struct {
