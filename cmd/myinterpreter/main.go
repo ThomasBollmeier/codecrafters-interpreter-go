@@ -31,12 +31,34 @@ func tokenize(filename string) {
 	}
 
 	scanner := NewScanner(string(fileContents))
+	var tokens []*Token
+	var errorTokens []*Token
 
 	for {
 		token, err := scanner.AdvanceToken()
 		if err != nil {
 			break
 		}
+		if token.Type != Error {
+			tokens = append(tokens, token)
+		} else {
+			errorTokens = append(errorTokens, token)
+		}
+	}
+
+	for _, token := range errorTokens {
+		fmt.Fprintf(
+			os.Stderr,
+			"[line %d] Error: Unexpected character: %s\n",
+			token.Line,
+			token.Lexeme)
+	}
+
+	for _, token := range tokens {
 		fmt.Println(token)
+	}
+
+	if errorTokens != nil {
+		os.Exit(65)
 	}
 }

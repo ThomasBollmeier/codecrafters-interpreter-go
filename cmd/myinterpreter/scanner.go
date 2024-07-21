@@ -12,6 +12,12 @@ type Scanner struct {
 	done       bool
 }
 
+type charInfo struct {
+	char   string
+	line   int
+	column int
+}
+
 func NewScanner(content string) *Scanner {
 	var characters []string
 	for _, char := range content {
@@ -31,40 +37,61 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		return nil, NewScannerError("no more tokens")
 	}
 
-	char, err := s.skipWhitespace()
+	cInfo, err := s.skipWhitespace()
 	if err != nil {
 		s.done = true
 		return &Token{Type: EOF}, nil
 	}
 
-	tokenType, ok := singleCharTokenTypes[char]
+	tokenType, ok := singleCharTokenTypes[cInfo.char]
 	if ok {
-		return &Token{Type: tokenType, Lexeme: char}, nil
+		return &Token{
+			Type:   tokenType,
+			Lexeme: cInfo.char,
+			Line:   cInfo.line,
+			Column: cInfo.column,
+		}, nil
 	}
 
-	return nil, NewScannerError("unexpected character %s", char)
+	return &Token{
+		Type:   Error,
+		Lexeme: cInfo.char,
+		Line:   cInfo.line,
+		Column: cInfo.column,
+	}, nil
 }
 
-func (s *Scanner) advanceChar() (string, error) {
+func (s *Scanner) advanceChar() (charInfo, error) {
 	if s.index >= len(s.characters) {
-		return "", NewScannerError("no more characters")
+		return charInfo{}, NewScannerError("no more characters")
 	}
 	char := s.characters[s.index]
+	line, column := s.line, s.column
+	if char != "\n" {
+		s.column++
+	} else {
+		s.line++
+		s.column = 1
+	}
 	s.index++
-	return char, nil
+	return charInfo{char, line, column}, nil
 }
 
-func (s *Scanner) skipWhitespace() (string, error) {
+func (s *Scanner) getLocation() (int, int) {
+	return s.line, s.column
+}
+
+func (s *Scanner) skipWhitespace() (charInfo, error) {
 	for {
-		char, err := s.advanceChar()
+		cInfo, err := s.advanceChar()
 		if err != nil {
-			return "", err
+			return charInfo{}, err
 		}
-		switch char {
+		switch cInfo.char {
 		case " ", "\t", "\n", "\r":
 			continue
 		default:
-			return char, nil
+			return cInfo, nil
 		}
 	}
 }
