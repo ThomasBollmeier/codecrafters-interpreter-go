@@ -19,16 +19,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	filename := os.Args[2]
+	tokenize(os.Args[2])
+
+}
+
+func tokenize(filename string) {
 	fileContents, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 		os.Exit(1)
 	}
 
-	if len(fileContents) > 0 {
-		panic("Scanner not implemented")
-	} else {
-		fmt.Println("EOF  null") // Placeholder, remove this line when implementing the scanner
+	scanner := NewScanner(string(fileContents))
+
+	for {
+		token, err := scanner.AdvanceToken()
+		if err != nil {
+			break
+		}
+		fmt.Println(token)
 	}
 }
