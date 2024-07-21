@@ -12,7 +12,7 @@ func TestNewScanner(t *testing.T) {
 }
 
 func TestScanner_AdvanceToken(t *testing.T) {
-	scanner := NewScanner("  (()\n")
+	scanner := NewScanner("  ((){}\n")
 	var tokens []Token
 	for {
 		token, err := scanner.AdvanceToken()
@@ -22,11 +22,13 @@ func TestScanner_AdvanceToken(t *testing.T) {
 		tokens = append(tokens, *token)
 	}
 
-	assertEq(4, len(tokens), t)
+	assertEq(6, len(tokens), t)
 	assertEq(LeftParen, tokens[0].Type, t)
 	assertEq(LeftParen, tokens[1].Type, t)
 	assertEq(RightParen, tokens[2].Type, t)
-	assertEq(EOF, tokens[3].Type, t)
+	assertEq(LeftBrace, tokens[3].Type, t)
+	assertEq(RightBrace, tokens[4].Type, t)
+	assertEq(EOF, tokens[5].Type, t)
 
 }
 

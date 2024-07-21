@@ -37,14 +37,12 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		return &Token{Type: EOF}, nil
 	}
 
-	switch char {
-	case "(":
-		return &Token{Type: LeftParen, Lexeme: char}, nil
-	case ")":
-		return &Token{Type: RightParen, Lexeme: char}, nil
-	default:
-		return nil, NewScannerError("unexpected character %s", char)
+	tokenType, ok := singleCharTokenTypes[char]
+	if ok {
+		return &Token{Type: tokenType, Lexeme: char}, nil
 	}
+
+	return nil, NewScannerError("unexpected character %s", char)
 }
 
 func (s *Scanner) advanceChar() (string, error) {
