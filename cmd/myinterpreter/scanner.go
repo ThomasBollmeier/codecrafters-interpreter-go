@@ -37,37 +37,69 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		return nil, NewScannerError("no more tokens")
 	}
 
-	cInfo, err := s.skipWhitespace()
-	if err != nil {
-		s.done = true
-		return &Token{Type: EOF}, nil
-	}
+	for {
 
-	tokenType, ok := singleCharTokenTypes[cInfo.char]
-	if ok {
+		cInfo, err := s.skipWhitespace()
+		if err != nil {
+			s.done = true
+			return &Token{Type: EOF}, nil
+		}
+
+		tokenType, ok := singleCharTokenTypes[cInfo.char]
+		if ok {
+			return &Token{
+				Type:   tokenType,
+				Lexeme: cInfo.char,
+				Line:   cInfo.line,
+				Column: cInfo.column,
+			}, nil
+		}
+
+		switch cInfo.char {
+		case "=":
+			return s.scanEqual(cInfo), nil
+		case "!":
+			return s.scanBang(cInfo), nil
+		case "<", ">":
+			return s.scanRelationOp(cInfo), nil
+		case "/":
+			token := s.scanSlash(cInfo)
+			if token != nil {
+				return token, nil
+			} else {
+				continue
+			}
+		}
+
 		return &Token{
-			Type:   tokenType,
+			Type:   Error,
 			Lexeme: cInfo.char,
 			Line:   cInfo.line,
 			Column: cInfo.column,
 		}, nil
-	}
 
-	switch cInfo.char {
-	case "=":
-		return s.scanEqual(cInfo), nil
-	case "!":
-		return s.scanBang(cInfo), nil
-	case "<", ">":
-		return s.scanRelationOp(cInfo), nil
 	}
+}
 
-	return &Token{
-		Type:   Error,
-		Lexeme: cInfo.char,
-		Line:   cInfo.line,
-		Column: cInfo.column,
-	}, nil
+func (s *Scanner) scanSlash(cInfo charInfo) *Token {
+	nextChar := s.peekChar()
+
+	if nextChar != "/" {
+		return &Token{
+			Type:   Slash,
+			Lexeme: cInfo.char,
+			Line:   cInfo.line,
+			Column: cInfo.column,
+		}
+	} else { // a line comment
+		for {
+			cInfo, err := s.advanceChar()
+			if err != nil || cInfo.char == "\n" {
+				break
+			}
+		}
+		return nil
+	}
 }
 
 func (s *Scanner) scanRelationOp(cInfo charInfo) *Token {

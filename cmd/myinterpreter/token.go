@@ -12,6 +12,7 @@ const (
 	Plus         TokenType = "PLUS"
 	Minus        TokenType = "MINUS"
 	Star         TokenType = "STAR"
+	Slash        TokenType = "SLASH"
 	Dot          TokenType = "DOT"
 	Comma        TokenType = "COMMA"
 	Semicolon    TokenType = "SEMICOLON"
