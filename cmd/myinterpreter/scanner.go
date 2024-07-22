@@ -58,6 +58,8 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		return s.scanEqual(cInfo), nil
 	case "!":
 		return s.scanBang(cInfo), nil
+	case "<", ">":
+		return s.scanRelationOp(cInfo), nil
 	}
 
 	return &Token{
@@ -66,6 +68,36 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		Line:   cInfo.line,
 		Column: cInfo.column,
 	}, nil
+}
+
+func (s *Scanner) scanRelationOp(cInfo charInfo) *Token {
+	var tokenType TokenType
+	var lexeme string
+	nextChar := s.peekChar()
+
+	if nextChar != "=" {
+		if cInfo.char == ">" {
+			tokenType = Greater
+		} else {
+			tokenType = Less
+		}
+		lexeme = cInfo.char
+	} else {
+		_, _ = s.advanceChar()
+		if cInfo.char == ">" {
+			tokenType = GreaterEqual
+		} else {
+			tokenType = LessEqual
+		}
+		lexeme = cInfo.char + nextChar
+	}
+
+	return &Token{
+		Type:   tokenType,
+		Lexeme: lexeme,
+		Line:   cInfo.line,
+		Column: cInfo.column,
+	}
 }
 
 func (s *Scanner) scanBang(cInfo charInfo) *Token {
