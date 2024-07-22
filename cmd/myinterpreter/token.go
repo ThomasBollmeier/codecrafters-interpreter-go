@@ -17,6 +17,8 @@ const (
 	Semicolon  TokenType = "SEMICOLON"
 	Equal      TokenType = "EQUAL"
 	EqualEqual TokenType = "EQUAL_EQUAL"
+	Bang       TokenType = "BANG"
+	BangEqual  TokenType = "BANG_EQUAL"
 	Error      TokenType = "ERROR"
 	EOF        TokenType = "EOF"
 )

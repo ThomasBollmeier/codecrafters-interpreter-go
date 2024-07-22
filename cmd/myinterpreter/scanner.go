@@ -56,6 +56,8 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 	switch cInfo.char {
 	case "=":
 		return s.scanEqual(cInfo), nil
+	case "!":
+		return s.scanBang(cInfo), nil
 	}
 
 	return &Token{
@@ -66,6 +68,27 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 	}, nil
 }
 
+func (s *Scanner) scanBang(cInfo charInfo) *Token {
+	var tokenType TokenType
+	var lexeme string
+	nextChar := s.peekChar()
+	if nextChar != "=" {
+		tokenType = Bang
+		lexeme = cInfo.char
+	} else {
+		_, _ = s.advanceChar()
+		tokenType = BangEqual
+		lexeme = cInfo.char + nextChar
+	}
+	return &Token{
+		Type:   tokenType,
+		Lexeme: lexeme,
+		Line:   cInfo.line,
+		Column: cInfo.column,
+	}
+
+}
+
 func (s *Scanner) scanEqual(cInfo charInfo) *Token {
 	var tokenType TokenType
 	var lexeme string
@@ -74,7 +97,7 @@ func (s *Scanner) scanEqual(cInfo charInfo) *Token {
 		tokenType = Equal
 		lexeme = cInfo.char
 	} else {
-		s.advanceChar()
+		_, _ = s.advanceChar()
 		tokenType = EqualEqual
 		lexeme = cInfo.char + nextChar
 	}
