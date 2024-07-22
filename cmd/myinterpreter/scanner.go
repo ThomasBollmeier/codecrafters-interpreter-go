@@ -53,12 +53,37 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		}, nil
 	}
 
+	switch cInfo.char {
+	case "=":
+		return s.scanEqual(cInfo), nil
+	}
+
 	return &Token{
 		Type:   Error,
 		Lexeme: cInfo.char,
 		Line:   cInfo.line,
 		Column: cInfo.column,
 	}, nil
+}
+
+func (s *Scanner) scanEqual(cInfo charInfo) *Token {
+	var tokenType TokenType
+	var lexeme string
+	nextChar := s.peekChar()
+	if nextChar != "=" {
+		tokenType = Equal
+		lexeme = cInfo.char
+	} else {
+		s.advanceChar()
+		tokenType = EqualEqual
+		lexeme = cInfo.char + nextChar
+	}
+	return &Token{
+		Type:   tokenType,
+		Lexeme: lexeme,
+		Line:   cInfo.line,
+		Column: cInfo.column,
+	}
 }
 
 func (s *Scanner) advanceChar() (charInfo, error) {
@@ -75,6 +100,13 @@ func (s *Scanner) advanceChar() (charInfo, error) {
 	}
 	s.index++
 	return charInfo{char, line, column}, nil
+}
+
+func (s *Scanner) peekChar() string {
+	if s.index >= len(s.characters) {
+		return ""
+	}
+	return s.characters[s.index]
 }
 
 func (s *Scanner) getLocation() (int, int) {

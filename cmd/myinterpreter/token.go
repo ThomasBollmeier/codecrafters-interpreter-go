@@ -15,6 +15,8 @@ const (
 	Dot        TokenType = "DOT"
 	Comma      TokenType = "COMMA"
 	Semicolon  TokenType = "SEMICOLON"
+	Equal      TokenType = "EQUAL"
+	EqualEqual TokenType = "EQUAL_EQUAL"
 	Error      TokenType = "ERROR"
 	EOF        TokenType = "EOF"
 )
