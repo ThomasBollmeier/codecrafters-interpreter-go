@@ -32,7 +32,7 @@ func NewScanner(content string) *Scanner {
 	}
 }
 
-func (s *Scanner) AdvanceToken() (*Token, error) {
+func (s *Scanner) AdvanceToken() (TokenIntf, error) {
 	if s.done {
 		return nil, NewScannerError("no more tokens")
 	}
@@ -42,17 +42,17 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 		cInfo, err := s.skipWhitespace()
 		if err != nil {
 			s.done = true
-			return &Token{Type: EOF}, nil
+			return newToken(EOF, "", 0, 0), nil
 		}
 
 		tokenType, ok := singleCharTokenTypes[cInfo.char]
 		if ok {
-			return &Token{
-				Type:   tokenType,
-				Lexeme: cInfo.char,
-				Line:   cInfo.line,
-				Column: cInfo.column,
-			}, nil
+			return newToken(
+				tokenType,
+				cInfo.char,
+				cInfo.line,
+				cInfo.column,
+			), nil
 		}
 
 		switch cInfo.char {
@@ -69,15 +69,41 @@ func (s *Scanner) AdvanceToken() (*Token, error) {
 			} else {
 				continue
 			}
+		case "\"":
+			return s.scanString(cInfo), nil
 		}
 
-		return &Token{
-			Type:   Error,
-			Lexeme: cInfo.char,
-			Line:   cInfo.line,
-			Column: cInfo.column,
-		}, nil
+		return newErrorToken(
+			cInfo.char,
+			fmt.Sprintf("Unexpected character: %s", cInfo.char),
+			cInfo.line,
+			cInfo.column,
+		), nil
 
+	}
+}
+
+func (s *Scanner) scanString(cInfo charInfo) TokenIntf {
+	lexeme := cInfo.char
+	for {
+		ci, err := s.advanceChar()
+		if err != nil {
+			return newErrorToken(
+				lexeme,
+				"Unterminated string.",
+				cInfo.line,
+				cInfo.column,
+			)
+		}
+		lexeme += ci.char
+		if ci.char == "\"" {
+			return newToken(
+				String,
+				lexeme,
+				cInfo.line,
+				cInfo.column,
+			)
+		}
 	}
 }
 
@@ -85,12 +111,12 @@ func (s *Scanner) scanSlash(cInfo charInfo) *Token {
 	nextChar := s.peekChar()
 
 	if nextChar != "/" {
-		return &Token{
-			Type:   Slash,
-			Lexeme: cInfo.char,
-			Line:   cInfo.line,
-			Column: cInfo.column,
-		}
+		return newToken(
+			Slash,
+			cInfo.char,
+			cInfo.line,
+			cInfo.column,
+		)
 	} else { // a line comment
 		for {
 			cInfo, err := s.advanceChar()
@@ -124,12 +150,12 @@ func (s *Scanner) scanRelationOp(cInfo charInfo) *Token {
 		lexeme = cInfo.char + nextChar
 	}
 
-	return &Token{
-		Type:   tokenType,
-		Lexeme: lexeme,
-		Line:   cInfo.line,
-		Column: cInfo.column,
-	}
+	return newToken(
+		tokenType,
+		lexeme,
+		cInfo.line,
+		cInfo.column,
+	)
 }
 
 func (s *Scanner) scanBang(cInfo charInfo) *Token {
@@ -144,12 +170,12 @@ func (s *Scanner) scanBang(cInfo charInfo) *Token {
 		tokenType = BangEqual
 		lexeme = cInfo.char + nextChar
 	}
-	return &Token{
-		Type:   tokenType,
-		Lexeme: lexeme,
-		Line:   cInfo.line,
-		Column: cInfo.column,
-	}
+	return newToken(
+		tokenType,
+		lexeme,
+		cInfo.line,
+		cInfo.column,
+	)
 
 }
 
@@ -165,12 +191,12 @@ func (s *Scanner) scanEqual(cInfo charInfo) *Token {
 		tokenType = EqualEqual
 		lexeme = cInfo.char + nextChar
 	}
-	return &Token{
-		Type:   tokenType,
-		Lexeme: lexeme,
-		Line:   cInfo.line,
-		Column: cInfo.column,
-	}
+	return newToken(
+		tokenType,
+		lexeme,
+		cInfo.line,
+		cInfo.column,
+	)
 }
 
 func (s *Scanner) advanceChar() (charInfo, error) {
