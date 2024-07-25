@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"unicode"
 )
 
 type Scanner struct {
-	characters []string
+	characters []rune
 	index      int
 	line       int
 	column     int
@@ -13,15 +14,15 @@ type Scanner struct {
 }
 
 type charInfo struct {
-	char   string
+	char   rune
 	line   int
 	column int
 }
 
 func NewScanner(content string) *Scanner {
-	var characters []string
+	var characters []rune
 	for _, char := range content {
-		characters = append(characters, string(char))
+		characters = append(characters, char)
 	}
 	return &Scanner{
 		characters: characters,
@@ -32,7 +33,7 @@ func NewScanner(content string) *Scanner {
 	}
 }
 
-func (s *Scanner) AdvanceToken() (TokenIntf, error) {
+func (s *Scanner) AdvanceToken() (TokenInfo, error) {
 	if s.done {
 		return nil, NewScannerError("no more tokens")
 	}
@@ -49,33 +50,37 @@ func (s *Scanner) AdvanceToken() (TokenIntf, error) {
 		if ok {
 			return newToken(
 				tokenType,
-				cInfo.char,
+				string(cInfo.char),
 				cInfo.line,
 				cInfo.column,
 			), nil
 		}
 
 		switch cInfo.char {
-		case "=":
+		case '=':
 			return s.scanEqual(cInfo), nil
-		case "!":
+		case '!':
 			return s.scanBang(cInfo), nil
-		case "<", ">":
+		case '<', '>':
 			return s.scanRelationOp(cInfo), nil
-		case "/":
+		case '/':
 			token := s.scanSlash(cInfo)
 			if token != nil {
 				return token, nil
 			} else {
 				continue
 			}
-		case "\"":
+		case '"':
 			return s.scanString(cInfo), nil
 		}
 
+		if unicode.IsDigit(cInfo.char) {
+			return s.scanNumber(cInfo), nil
+		}
+
 		return newErrorToken(
-			cInfo.char,
-			fmt.Sprintf("Unexpected character: %s", cInfo.char),
+			string(cInfo.char),
+			fmt.Sprintf("Unexpected character: %c", cInfo.char),
 			cInfo.line,
 			cInfo.column,
 		), nil
@@ -83,8 +88,52 @@ func (s *Scanner) AdvanceToken() (TokenIntf, error) {
 	}
 }
 
-func (s *Scanner) scanString(cInfo charInfo) TokenIntf {
-	lexeme := cInfo.char
+func (s *Scanner) scanNumber(cInfo charInfo) TokenInfo {
+	lexeme := string(cInfo.char)
+	foundDot := false
+loop:
+	for {
+		nextChars := s.peekNChars(2)
+		switch len(nextChars) {
+		case 0:
+			break loop
+		case 1:
+			ch := nextChars[0]
+			if unicode.IsDigit(ch) {
+				lexeme += string(ch)
+				_, _ = s.advanceChar()
+			}
+			break loop
+		case 2:
+			ch := nextChars[0]
+			if unicode.IsDigit(ch) {
+				lexeme += string(ch)
+				_, _ = s.advanceChar()
+			} else if ch == '.' && !foundDot {
+				foundDot = true
+				ch2 := nextChars[1]
+				if unicode.IsDigit(ch2) {
+					lexeme += string(ch)
+					_, _ = s.advanceChar()
+				} else {
+					break loop
+				}
+			} else {
+				break loop
+			}
+		}
+	}
+
+	return newToken(
+		Number,
+		lexeme,
+		cInfo.line,
+		cInfo.column,
+	)
+}
+
+func (s *Scanner) scanString(cInfo charInfo) TokenInfo {
+	lexeme := string(cInfo.char)
 	for {
 		ci, err := s.advanceChar()
 		if err != nil {
@@ -95,8 +144,8 @@ func (s *Scanner) scanString(cInfo charInfo) TokenIntf {
 				cInfo.column,
 			)
 		}
-		lexeme += ci.char
-		if ci.char == "\"" {
+		lexeme += string(ci.char)
+		if ci.char == '"' {
 			return newToken(
 				String,
 				lexeme,
@@ -108,19 +157,19 @@ func (s *Scanner) scanString(cInfo charInfo) TokenIntf {
 }
 
 func (s *Scanner) scanSlash(cInfo charInfo) *Token {
-	nextChar := s.peekChar()
+	nextChar, err := s.peekChar()
 
-	if nextChar != "/" {
+	if nextChar != '/' || err != nil {
 		return newToken(
 			Slash,
-			cInfo.char,
+			string(cInfo.char),
 			cInfo.line,
 			cInfo.column,
 		)
 	} else { // a line comment
 		for {
-			cInfo, err := s.advanceChar()
-			if err != nil || cInfo.char == "\n" {
+			cInfo, err = s.advanceChar()
+			if err != nil || cInfo.char == '\n' {
 				break
 			}
 		}
@@ -131,23 +180,23 @@ func (s *Scanner) scanSlash(cInfo charInfo) *Token {
 func (s *Scanner) scanRelationOp(cInfo charInfo) *Token {
 	var tokenType TokenType
 	var lexeme string
-	nextChar := s.peekChar()
+	nextChar, err := s.peekChar()
 
-	if nextChar != "=" {
-		if cInfo.char == ">" {
+	if nextChar != '=' || err != nil {
+		if cInfo.char == '>' {
 			tokenType = Greater
 		} else {
 			tokenType = Less
 		}
-		lexeme = cInfo.char
+		lexeme = string(cInfo.char)
 	} else {
 		_, _ = s.advanceChar()
-		if cInfo.char == ">" {
+		if cInfo.char == '>' {
 			tokenType = GreaterEqual
 		} else {
 			tokenType = LessEqual
 		}
-		lexeme = cInfo.char + nextChar
+		lexeme = string(cInfo.char) + string(nextChar)
 	}
 
 	return newToken(
@@ -161,14 +210,14 @@ func (s *Scanner) scanRelationOp(cInfo charInfo) *Token {
 func (s *Scanner) scanBang(cInfo charInfo) *Token {
 	var tokenType TokenType
 	var lexeme string
-	nextChar := s.peekChar()
-	if nextChar != "=" {
+	nextChar, err := s.peekChar()
+	if nextChar != '=' || err != nil {
 		tokenType = Bang
-		lexeme = cInfo.char
+		lexeme = string(cInfo.char)
 	} else {
 		_, _ = s.advanceChar()
 		tokenType = BangEqual
-		lexeme = cInfo.char + nextChar
+		lexeme = string(cInfo.char) + string(nextChar)
 	}
 	return newToken(
 		tokenType,
@@ -182,14 +231,14 @@ func (s *Scanner) scanBang(cInfo charInfo) *Token {
 func (s *Scanner) scanEqual(cInfo charInfo) *Token {
 	var tokenType TokenType
 	var lexeme string
-	nextChar := s.peekChar()
-	if nextChar != "=" {
+	nextChar, err := s.peekChar()
+	if nextChar != '=' || err != nil {
 		tokenType = Equal
-		lexeme = cInfo.char
+		lexeme = string(cInfo.char)
 	} else {
 		_, _ = s.advanceChar()
 		tokenType = EqualEqual
-		lexeme = cInfo.char + nextChar
+		lexeme = string(cInfo.char) + string(nextChar)
 	}
 	return newToken(
 		tokenType,
@@ -205,7 +254,7 @@ func (s *Scanner) advanceChar() (charInfo, error) {
 	}
 	char := s.characters[s.index]
 	line, column := s.line, s.column
-	if char != "\n" {
+	if char != '\n' {
 		s.column++
 	} else {
 		s.line++
@@ -215,11 +264,20 @@ func (s *Scanner) advanceChar() (charInfo, error) {
 	return charInfo{char, line, column}, nil
 }
 
-func (s *Scanner) peekChar() string {
+func (s *Scanner) peekChar() (rune, error) {
 	if s.index >= len(s.characters) {
-		return ""
+		return ' ', NewScannerError("no more characters")
 	}
-	return s.characters[s.index]
+	return s.characters[s.index], nil
+}
+
+func (s *Scanner) peekNChars(n int) []rune {
+	exclIndex := s.index + n
+	if exclIndex < len(s.characters) {
+		return s.characters[s.index:exclIndex]
+	} else {
+		return s.characters[s.index:]
+	}
 }
 
 func (s *Scanner) getLocation() (int, int) {
@@ -233,7 +291,7 @@ func (s *Scanner) skipWhitespace() (charInfo, error) {
 			return charInfo{}, err
 		}
 		switch cInfo.char {
-		case " ", "\t", "\n", "\r":
+		case ' ', '\t', '\n', '\r':
 			continue
 		default:
 			return cInfo, nil

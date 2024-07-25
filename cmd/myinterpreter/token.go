@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 type TokenType string
 
@@ -25,24 +29,25 @@ const (
 	Greater      TokenType = "GREATER"
 	GreaterEqual TokenType = "GREATER_EQUAL"
 	String       TokenType = "STRING"
+	Number       TokenType = "NUMBER"
 	Error        TokenType = "ERROR"
 	EOF          TokenType = "EOF"
 )
 
-var singleCharTokenTypes = map[string]TokenType{
-	"(": LeftParen,
-	")": RightParen,
-	"{": LeftBrace,
-	"}": RightBrace,
-	"+": Plus,
-	"-": Minus,
-	"*": Star,
-	".": Dot,
-	",": Comma,
-	";": Semicolon,
+var singleCharTokenTypes = map[rune]TokenType{
+	'(': LeftParen,
+	')': RightParen,
+	'{': LeftBrace,
+	'}': RightBrace,
+	'+': Plus,
+	'-': Minus,
+	'*': Star,
+	'.': Dot,
+	',': Comma,
+	';': Semicolon,
 }
 
-type TokenIntf interface {
+type TokenInfo interface {
 	GetTokenType() TokenType
 	GetLexeme() string
 	GetPosition() (int, int)
@@ -70,6 +75,16 @@ func (t Token) String() string {
 		length := len(t.lexeme)
 		strValue := t.lexeme[1 : length-1]
 		return fmt.Sprintf("%s %s %s", t.tokenType, t.lexeme, strValue)
+	case Number:
+		floatValue, err := strconv.ParseFloat(t.lexeme, 64)
+		if err != nil {
+			floatValue = 0.0
+		}
+		if strings.ContainsRune(t.lexeme, '.') {
+			return fmt.Sprintf("%s %s %.4f", t.tokenType, t.lexeme, floatValue)
+		} else {
+			return fmt.Sprintf("%s %s %.1f", t.tokenType, t.lexeme, floatValue)
+		}
 	default:
 		return fmt.Sprintf("%s %s null", t.tokenType, t.lexeme)
 	}

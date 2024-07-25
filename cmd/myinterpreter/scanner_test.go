@@ -13,7 +13,7 @@ func TestNewScanner(t *testing.T) {
 
 func TestScanner_AdvanceToken(t *testing.T) {
 	scanner := NewScanner("  ((){}\n")
-	var tokens []TokenIntf
+	var tokens []TokenInfo
 	for {
 		token, err := scanner.AdvanceToken()
 		if err != nil {

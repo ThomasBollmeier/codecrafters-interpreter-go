@@ -31,8 +31,8 @@ func tokenize(filename string) {
 	}
 
 	scanner := NewScanner(string(fileContents))
-	var tokens []TokenIntf
-	var errorTokens []TokenIntf
+	var tokens []TokenInfo
+	var errorTokens []TokenInfo
 
 	for {
 		token, err := scanner.AdvanceToken()
