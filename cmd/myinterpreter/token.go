@@ -31,9 +31,44 @@ const (
 	String       TokenType = "STRING"
 	Number       TokenType = "NUMBER"
 	Identifier   TokenType = "IDENTIFIER"
+	And          TokenType = "AND"
+	Class        TokenType = "CLASS"
+	Else         TokenType = "ELSE"
+	False        TokenType = "FALSE"
+	For          TokenType = "FOR"
+	Fun          TokenType = "FUN"
+	If           TokenType = "IF"
+	Nil          TokenType = "NIL"
+	Or           TokenType = "OR"
+	Print        TokenType = "PRINT"
+	Return       TokenType = "RETURN"
+	Super        TokenType = "SUPER"
+	This         TokenType = "THIS"
+	True         TokenType = "TRUE"
+	Var          TokenType = "VAR"
+	While        TokenType = "WHILE"
 	Error        TokenType = "ERROR"
 	EOF          TokenType = "EOF"
 )
+
+var reservedWords = map[string]TokenType{
+	"and":    And,
+	"class":  Class,
+	"else":   Else,
+	"false":  False,
+	"for":    For,
+	"fun":    Fun,
+	"if":     If,
+	"nil":    Nil,
+	"or":     Or,
+	"print":  Print,
+	"return": Return,
+	"super":  Super,
+	"this":   This,
+	"true":   True,
+	"var":    Var,
+	"while":  While,
+}
 
 var singleCharTokenTypes = map[rune]TokenType{
 	'(': LeftParen,

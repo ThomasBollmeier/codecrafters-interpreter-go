@@ -108,8 +108,17 @@ func (s *Scanner) scanIdentifier(cInfo charInfo) TokenInfo {
 		}
 	}
 
+	keywordType, isKeyword := reservedWords[lexeme]
+	var tokenType TokenType
+
+	if !isKeyword {
+		tokenType = Identifier
+	} else {
+		tokenType = keywordType
+	}
+
 	return newToken(
-		Identifier,
+		tokenType,
 		lexeme,
 		cInfo.line,
 		cInfo.column,
