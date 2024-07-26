@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strconv"
-	"strings"
 )
 
 type TokenType string
@@ -30,6 +30,7 @@ const (
 	GreaterEqual TokenType = "GREATER_EQUAL"
 	String       TokenType = "STRING"
 	Number       TokenType = "NUMBER"
+	Identifier   TokenType = "IDENTIFIER"
 	Error        TokenType = "ERROR"
 	EOF          TokenType = "EOF"
 )
@@ -80,7 +81,7 @@ func (t Token) String() string {
 		if err != nil {
 			floatValue = 0.0
 		}
-		if strings.ContainsRune(t.lexeme, '.') {
+		if math.Abs(floatValue-math.Round(floatValue)) > 1e-5 {
 			return fmt.Sprintf("%s %s %.4f", t.tokenType, t.lexeme, floatValue)
 		} else {
 			return fmt.Sprintf("%s %s %.1f", t.tokenType, t.lexeme, floatValue)

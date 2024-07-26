@@ -78,6 +78,10 @@ func (s *Scanner) AdvanceToken() (TokenInfo, error) {
 			return s.scanNumber(cInfo), nil
 		}
 
+		if unicode.IsLetter(cInfo.char) || cInfo.char == '_' {
+			return s.scanIdentifier(cInfo), nil
+		}
+
 		return newErrorToken(
 			string(cInfo.char),
 			fmt.Sprintf("Unexpected character: %c", cInfo.char),
@@ -86,6 +90,30 @@ func (s *Scanner) AdvanceToken() (TokenInfo, error) {
 		), nil
 
 	}
+}
+
+func (s *Scanner) scanIdentifier(cInfo charInfo) TokenInfo {
+	lexeme := string(cInfo.char)
+
+	for {
+		nextChar, err := s.peekChar()
+		if err != nil {
+			break
+		}
+		if unicode.IsLetter(nextChar) || unicode.IsDigit(nextChar) || nextChar == '_' {
+			_, _ = s.advanceChar()
+			lexeme += string(nextChar)
+		} else {
+			break
+		}
+	}
+
+	return newToken(
+		Identifier,
+		lexeme,
+		cInfo.line,
+		cInfo.column,
+	)
 }
 
 func (s *Scanner) scanNumber(cInfo charInfo) TokenInfo {
