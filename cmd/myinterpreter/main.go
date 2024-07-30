@@ -14,13 +14,35 @@ func main() {
 
 	command := os.Args[1]
 
-	if command != "tokenize" {
+	switch command {
+	case "tokenize":
+		tokenize(os.Args[2])
+	case "parse":
+		parse(os.Args[2])
+	default:
 		_, _ = fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
 	}
 
-	tokenize(os.Args[2])
+}
 
+func parse(filename string) {
+	fileContents, err := os.ReadFile(filename)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	parser := NewParser(string(fileContents))
+	ast, err := parser.Parse()
+
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error parsing file: %v\n", err)
+		os.Exit(65)
+	}
+
+	astPrinter := NewAstPrinter()
+	ast.accept(astPrinter)
 }
 
 func tokenize(filename string) {
