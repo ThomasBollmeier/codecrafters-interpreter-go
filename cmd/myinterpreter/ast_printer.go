@@ -38,6 +38,13 @@ func (ap *AstPrinter) visitGroupExpr(grp *GroupExpr) {
 	fmt.Printf(")")
 }
 
+func (ap *AstPrinter) visitUnaryExpr(unaryExpr *UnaryExpr) {
+	opString := unaryExpr.Operator.GetLexeme()
+	fmt.Printf("(%s ", opString)
+	unaryExpr.Value.accept(ap)
+	fmt.Printf(")")
+}
+
 func (ap *AstPrinter) visitBinaryExpr(binExpr *BinaryExpr) {
 	fmt.Printf("(%s ", binExpr.Operator.GetLexeme())
 	binExpr.Left.accept(ap)

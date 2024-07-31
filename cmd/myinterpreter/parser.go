@@ -90,9 +90,19 @@ func (p *Parser) parseAtomic() (Expr, error) {
 		return NewStringExpr(value), nil
 	case LeftParen:
 		return p.parseGroup()
+	case Bang, Minus:
+		return p.parseUnary(token)
 	default:
 		return nil, errors.New(fmt.Sprintf("unexpected token: %s", tt))
 	}
+}
+
+func (p *Parser) parseUnary(operator TokenInfo) (Expr, error) {
+	value, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	return NewUnaryExpr(operator, value), nil
 }
 
 func (p *Parser) parseGroup() (Expr, error) {

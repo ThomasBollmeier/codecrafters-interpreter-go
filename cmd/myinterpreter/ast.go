@@ -66,6 +66,19 @@ func (groupExpr *GroupExpr) accept(visitor AstVisitor) {
 	visitor.visitGroupExpr(groupExpr)
 }
 
+type UnaryExpr struct {
+	Operator TokenInfo
+	Value    Expr
+}
+
+func NewUnaryExpr(operator TokenInfo, value Expr) *UnaryExpr {
+	return &UnaryExpr{operator, value}
+}
+
+func (unaryExpr *UnaryExpr) accept(visitor AstVisitor) {
+	visitor.visitUnaryExpr(unaryExpr)
+}
+
 type BinaryExpr struct {
 	Left, Right Expr
 	Operator    TokenInfo
@@ -89,5 +102,6 @@ type AstVisitor interface {
 	visitNilExpr()
 	visitStringExpr(stringExpr *StringExpr)
 	visitGroupExpr(groupExpr *GroupExpr)
+	visitUnaryExpr(unaryExpr *UnaryExpr)
 	visitBinaryExpr(expr *BinaryExpr)
 }
