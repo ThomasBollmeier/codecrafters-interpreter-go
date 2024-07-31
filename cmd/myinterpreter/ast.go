@@ -42,6 +42,18 @@ func (nil *NilExpr) accept(visitor AstVisitor) {
 	visitor.visitNilExpr()
 }
 
+type StringExpr struct {
+	Value string
+}
+
+func NewStringExpr(value string) *StringExpr {
+	return &StringExpr{value}
+}
+
+func (string *StringExpr) accept(visitor AstVisitor) {
+	visitor.visitStringExpr(string)
+}
+
 type BinaryExpr struct {
 	Left, Right Expr
 	Operator    TokenInfo
@@ -63,5 +75,6 @@ type AstVisitor interface {
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()
+	visitStringExpr(stringExpr *StringExpr)
 	visitBinaryExpr(expr *BinaryExpr)
 }

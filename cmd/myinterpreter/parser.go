@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Parser struct {
@@ -73,6 +74,9 @@ func (p *Parser) parseAtomic() (Expr, error) {
 		return NewBooleanExpr(false), nil
 	case Nil:
 		return NewNilExpr(), nil
+	case String:
+		value := strings.Trim(token.GetLexeme(), "\"")
+		return NewStringExpr(value), nil
 	default:
 		return nil, errors.New(fmt.Sprintf("unexpected token: %s", tt))
 	}

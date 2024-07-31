@@ -28,6 +28,10 @@ func (ap *AstPrinter) visitNilExpr() {
 	fmt.Printf("nil")
 }
 
+func (ap *AstPrinter) visitStringExpr(str *StringExpr) {
+	fmt.Printf("%s", str.Value)
+}
+
 func (ap *AstPrinter) visitBinaryExpr(binExpr *BinaryExpr) {
 	fmt.Printf("(%s ", binExpr.Operator.GetLexeme())
 	binExpr.Left.accept(ap)
