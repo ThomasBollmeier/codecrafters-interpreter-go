@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math"
+	"strings"
 )
 
 type AstPrinter struct {
@@ -13,11 +13,11 @@ func NewAstPrinter() *AstPrinter {
 }
 
 func (ap *AstPrinter) visitNumberExpr(num *NumberExpr) {
-	if math.Abs(num.Value-math.Round(num.Value)) > 1e-5 {
-		fmt.Printf("%.4f", num.Value)
-	} else {
-		fmt.Printf("%.1f", num.Value)
+	numStr := strings.TrimRight(fmt.Sprintf("%f", num.Value), "0")
+	if numStr[len(numStr)-1] == uint8('.') {
+		numStr = numStr + "0"
 	}
+	fmt.Print(numStr)
 }
 
 func (ap *AstPrinter) visitBooleanExpr(be *BooleanExpr) {
