@@ -32,6 +32,12 @@ func (ap *AstPrinter) visitStringExpr(str *StringExpr) {
 	fmt.Printf("%s", str.Value)
 }
 
+func (ap *AstPrinter) visitGroupExpr(grp *GroupExpr) {
+	fmt.Printf("(group ")
+	grp.Inner.accept(ap)
+	fmt.Printf(")")
+}
+
 func (ap *AstPrinter) visitBinaryExpr(binExpr *BinaryExpr) {
 	fmt.Printf("(%s ", binExpr.Operator.GetLexeme())
 	binExpr.Left.accept(ap)

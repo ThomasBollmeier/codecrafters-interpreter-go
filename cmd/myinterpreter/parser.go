@@ -22,7 +22,18 @@ func NewParser(content string) *Parser {
 }
 
 func (p *Parser) Parse() (AST, error) {
-	return p.parseExpr()
+	ast, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	token, err := p.advance()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() != EOF {
+		return nil, errors.New("expected end of tokens")
+	}
+	return ast, nil
 }
 
 func (p *Parser) parseExpr() (Expr, error) {
@@ -77,9 +88,26 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	case String:
 		value := strings.Trim(token.GetLexeme(), "\"")
 		return NewStringExpr(value), nil
+	case LeftParen:
+		return p.parseGroup()
 	default:
 		return nil, errors.New(fmt.Sprintf("unexpected token: %s", tt))
 	}
+}
+
+func (p *Parser) parseGroup() (Expr, error) {
+	inner, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	tok, err := p.advance()
+	if err != nil {
+		return nil, err
+	}
+	if tok.GetTokenType() != RightParen {
+		return nil, errors.New("expected right paren")
+	}
+	return NewGroupExpr(inner), nil
 }
 
 func (p *Parser) advance() (TokenInfo, error) {

@@ -54,6 +54,18 @@ func (string *StringExpr) accept(visitor AstVisitor) {
 	visitor.visitStringExpr(string)
 }
 
+type GroupExpr struct {
+	Inner Expr
+}
+
+func NewGroupExpr(inner Expr) *GroupExpr {
+	return &GroupExpr{inner}
+}
+
+func (groupExpr *GroupExpr) accept(visitor AstVisitor) {
+	visitor.visitGroupExpr(groupExpr)
+}
+
 type BinaryExpr struct {
 	Left, Right Expr
 	Operator    TokenInfo
@@ -76,5 +88,6 @@ type AstVisitor interface {
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()
 	visitStringExpr(stringExpr *StringExpr)
+	visitGroupExpr(groupExpr *GroupExpr)
 	visitBinaryExpr(expr *BinaryExpr)
 }
