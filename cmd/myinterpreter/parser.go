@@ -37,37 +37,88 @@ func (p *Parser) Parse() (AST, error) {
 }
 
 func (p *Parser) parseExpr() (Expr, error) {
-	left, err := p.parseTerm()
-	if err != nil {
-		return nil, err
-	}
+	var terms []Expr
+	var operators []TokenInfo
 
-	var operator TokenInfo
-	operator, err = p.peek()
-	if err != nil {
-		return left, nil
-	}
-
-	switch operator.GetTokenType() {
-	case Plus, Minus:
-		var right Expr
-		_, _ = p.advance()
-		right, err = p.parseExpr()
+loop:
+	for {
+		term, err := p.parseTerm()
 		if err != nil {
 			return nil, err
 		}
-		return NewBinaryExpr(operator, left, right), nil
-	default:
-		return left, nil
+		terms = append(terms, term)
+
+		token, err := p.peek()
+		if err != nil {
+			break
+		}
+		switch token.GetTokenType() {
+		case Plus, Minus:
+			operators = append(operators, token)
+			_, _ = p.advance()
+		default:
+			break loop
+		}
 	}
+
+	if len(terms) == 1 {
+		return terms[0], nil
+	}
+
+	var ret *BinaryExpr
+
+	for i, op := range operators {
+		if ret == nil {
+			ret = NewBinaryExpr(op, terms[i], terms[i+1])
+		} else {
+			ret = NewBinaryExpr(op, ret, terms[i+1])
+		}
+	}
+
+	return ret, nil
+
 }
 
 func (p *Parser) parseTerm() (Expr, error) {
-	atomic, err := p.parseAtomic()
-	if err != nil {
-		return nil, err
+	var factors []Expr
+	var operators []TokenInfo
+
+loop:
+	for {
+		factor, err := p.parseAtomic()
+		if err != nil {
+			return nil, err
+		}
+		factors = append(factors, factor)
+
+		token, err := p.peek()
+		if err != nil {
+			break
+		}
+		switch token.GetTokenType() {
+		case Star, Slash:
+			operators = append(operators, token)
+			_, _ = p.advance()
+		default:
+			break loop
+		}
 	}
-	return atomic, nil
+
+	if len(factors) == 1 {
+		return factors[0], nil
+	}
+
+	var ret *BinaryExpr
+
+	for i, op := range operators {
+		if ret == nil {
+			ret = NewBinaryExpr(op, factors[i], factors[i+1])
+		} else {
+			ret = NewBinaryExpr(op, ret, factors[i+1])
+		}
+	}
+
+	return ret, nil
 }
 
 func (p *Parser) parseAtomic() (Expr, error) {
@@ -98,7 +149,7 @@ func (p *Parser) parseAtomic() (Expr, error) {
 }
 
 func (p *Parser) parseUnary(operator TokenInfo) (Expr, error) {
-	value, err := p.parseExpr()
+	value, err := p.parseAtomic()
 	if err != nil {
 		return nil, err
 	}

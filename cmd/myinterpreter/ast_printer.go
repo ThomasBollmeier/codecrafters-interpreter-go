@@ -50,5 +50,5 @@ func (ap *AstPrinter) visitBinaryExpr(binExpr *BinaryExpr) {
 	binExpr.Left.accept(ap)
 	fmt.Printf(" ")
 	binExpr.Right.accept(ap)
-	fmt.Printf(")\n")
+	fmt.Printf(")")
 }
