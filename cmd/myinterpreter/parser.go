@@ -37,84 +37,73 @@ func (p *Parser) Parse() (AST, error) {
 }
 
 func (p *Parser) parseExpr() (Expr, error) {
-	var terms []Expr
-	var operators []TokenInfo
+	return p.parseBinary(
+		[]TokenType{EqualEqual, BangEqual},
+		func() (Expr, error) { return p.parseComparison() })
+}
 
-loop:
-	for {
-		term, err := p.parseTerm()
-		if err != nil {
-			return nil, err
-		}
-		terms = append(terms, term)
+func (p *Parser) parseComparison() (Expr, error) {
+	return p.parseBinary(
+		[]TokenType{Greater, GreaterEqual, Less, LessEqual},
+		func() (Expr, error) { return p.parseSum() })
+}
 
-		token, err := p.peek()
-		if err != nil {
-			break
-		}
-		switch token.GetTokenType() {
-		case Plus, Minus:
-			operators = append(operators, token)
-			_, _ = p.advance()
-		default:
-			break loop
-		}
-	}
-
-	if len(terms) == 1 {
-		return terms[0], nil
-	}
-
-	var ret *BinaryExpr
-
-	for i, op := range operators {
-		if ret == nil {
-			ret = NewBinaryExpr(op, terms[i], terms[i+1])
-		} else {
-			ret = NewBinaryExpr(op, ret, terms[i+1])
-		}
-	}
-
-	return ret, nil
-
+func (p *Parser) parseSum() (Expr, error) {
+	return p.parseBinary(
+		[]TokenType{Plus, Minus},
+		func() (Expr, error) { return p.parseTerm() })
 }
 
 func (p *Parser) parseTerm() (Expr, error) {
-	var factors []Expr
+	return p.parseBinary(
+		[]TokenType{Star, Slash},
+		func() (Expr, error) { return p.parseAtomic() })
+}
+
+func (p *Parser) parseBinary(
+	operatorTypes []TokenType,
+	parseFunc func() (Expr, error)) (Expr, error) {
+
+	var operands []Expr
 	var operators []TokenInfo
+
+	opTypes := map[TokenType]bool{}
+	for _, opType := range operatorTypes {
+		opTypes[opType] = true
+	}
 
 loop:
 	for {
-		factor, err := p.parseAtomic()
+		operand, err := parseFunc()
 		if err != nil {
 			return nil, err
 		}
-		factors = append(factors, factor)
+		operands = append(operands, operand)
 
 		token, err := p.peek()
 		if err != nil {
 			break
 		}
-		switch token.GetTokenType() {
-		case Star, Slash:
+		_, isValidOperator := opTypes[token.GetTokenType()]
+		if isValidOperator {
 			operators = append(operators, token)
 			_, _ = p.advance()
-		default:
+		} else {
 			break loop
 		}
 	}
 
-	if len(factors) == 1 {
-		return factors[0], nil
+	if len(operands) == 1 {
+		return operands[0], nil
 	}
 
 	var ret *BinaryExpr
 
 	for i, op := range operators {
 		if ret == nil {
-			ret = NewBinaryExpr(op, factors[i], factors[i+1])
+			ret = NewBinaryExpr(op, operands[i], operands[i+1])
 		} else {
-			ret = NewBinaryExpr(op, ret, factors[i+1])
+			ret = NewBinaryExpr(op, ret, operands[i+1])
 		}
 	}
 

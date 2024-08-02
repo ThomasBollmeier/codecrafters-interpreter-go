@@ -5,7 +5,7 @@ import (
 )
 
 func TestParser_Parse(t *testing.T) {
-	code := "72 * 63 / 48"
+	code := "(68 - 11) >= -(17 / 54 + 34)"
 	parser := NewParser(code)
 
 	ast, err := parser.Parse()
