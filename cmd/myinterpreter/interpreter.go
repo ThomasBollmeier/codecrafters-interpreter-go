@@ -1,6 +1,9 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Interpreter struct {
 	parser     *Parser
@@ -88,7 +91,46 @@ func (interpreter *Interpreter) visitUnaryExpr(unaryExpr *UnaryExpr) {
 }
 
 func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
-	panic("not implemented")
+	var left, right Value
+	var err error
+
+	left, err = interpreter.evalAst(expr.Left)
+	if err != nil {
+		interpreter.lastResult = nil
+		interpreter.lastError = err
+		return
+	}
+
+	right, err = interpreter.evalAst(expr.Right)
+	if err != nil {
+		interpreter.lastResult = nil
+		interpreter.lastError = err
+		return
+	}
+
+	leftType := left.getType()
+	rightType := right.getType()
+	bothNums := leftType == VtNumber && rightType == VtNumber
+
+	switch op := expr.Operator.GetLexeme(); op {
+	case "*", "/":
+		if bothNums {
+			switch op {
+			case "*":
+				interpreter.lastResult = NewNumValue(left.(*NumValue).Value * right.(*NumValue).Value)
+			case "/":
+				interpreter.lastResult = NewNumValue(left.(*NumValue).Value / right.(*NumValue).Value)
+			}
+			interpreter.lastError = nil
+		} else {
+			interpreter.lastResult = nil
+			interpreter.lastError = errors.New("only numbers are supported")
+		}
+	default:
+		interpreter.lastResult = nil
+		interpreter.lastError = errors.New(fmt.Sprintf("unsupported operator %s", op))
+	}
+
 }
 
 func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {
