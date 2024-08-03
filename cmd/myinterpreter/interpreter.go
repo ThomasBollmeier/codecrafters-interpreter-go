@@ -41,7 +41,7 @@ func (interpreter *Interpreter) visitStringExpr(stringExpr *StringExpr) {
 }
 
 func (interpreter *Interpreter) visitGroupExpr(groupExpr *GroupExpr) {
-	panic("not implemented")
+	interpreter.lastResult, interpreter.lastError = interpreter.evalAst(groupExpr.Inner)
 }
 
 func (interpreter *Interpreter) visitUnaryExpr(unaryExpr *UnaryExpr) {
