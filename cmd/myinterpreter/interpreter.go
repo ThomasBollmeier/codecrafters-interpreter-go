@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 type Interpreter struct {
 	parser     *Parser
 	lastResult Value
@@ -45,7 +47,44 @@ func (interpreter *Interpreter) visitGroupExpr(groupExpr *GroupExpr) {
 }
 
 func (interpreter *Interpreter) visitUnaryExpr(unaryExpr *UnaryExpr) {
-	panic("not implemented")
+	value, err := interpreter.evalAst(unaryExpr.Value)
+	if err != nil {
+		interpreter.lastError = nil
+		interpreter.lastError = err
+		return
+	}
+
+	if unaryExpr.Operator.GetLexeme() == "-" {
+		if value.getType() == VtNumber {
+			num := value.(*NumValue)
+			interpreter.lastResult = NewNumValue(-num.Value)
+			interpreter.lastError = nil
+		} else {
+			interpreter.lastResult = nil
+			interpreter.lastError = errors.New("unary operator '-' supports only numbers")
+		}
+	} else {
+		switch value.getType() {
+		case VtNumber:
+			num := value.(*NumValue)
+			interpreter.lastResult = NewBooleanValue(num.Value == 0)
+			interpreter.lastError = nil
+		case VtString:
+			str := value.(*StringValue)
+			interpreter.lastResult = NewBooleanValue(len(str.Value) == 0)
+			interpreter.lastError = nil
+		case VtBoolean:
+			boolValue := value.(*BooleanValue)
+			interpreter.lastResult = NewBooleanValue(!boolValue.Value)
+			interpreter.lastError = nil
+		case VtNil:
+			interpreter.lastResult = NewBooleanValue(true)
+			interpreter.lastError = nil
+		default:
+			interpreter.lastResult = nil
+			interpreter.lastError = errors.New("unsupported value type for unary operator '!'")
+		}
+	}
 }
 
 func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
