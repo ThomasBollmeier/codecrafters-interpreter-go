@@ -11,6 +11,7 @@ const (
 	VtNumber ValueType = iota
 	VtBoolean
 	VtNil
+	VtString
 )
 
 type Value interface {
@@ -31,8 +32,9 @@ func (n *NumValue) getType() ValueType {
 
 func (n *NumValue) String() string {
 	numStr := strings.TrimRight(fmt.Sprintf("%f", n.Value), "0")
-	if numStr[len(numStr)-1] == uint8('.') {
-		numStr = numStr + "0"
+	lastIdx := len(numStr) - 1
+	if numStr[lastIdx] == uint8('.') {
+		numStr = numStr[:lastIdx]
 	}
 
 	return numStr
@@ -70,4 +72,20 @@ func (n *NilValue) getType() ValueType {
 
 func (n *NilValue) String() string {
 	return "nil"
+}
+
+type StringValue struct {
+	Value string
+}
+
+func NewStringValue(v string) *StringValue {
+	return &StringValue{v}
+}
+
+func (s *StringValue) getType() ValueType {
+	return VtString
+}
+
+func (s *StringValue) String() string {
+	return s.Value
 }

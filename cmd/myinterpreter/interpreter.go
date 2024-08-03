@@ -17,8 +17,7 @@ func (interpreter *Interpreter) Eval() (Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	ast.accept(interpreter)
-	return interpreter.lastResult, interpreter.lastError
+	return interpreter.evalAst(ast)
 }
 
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
@@ -37,7 +36,8 @@ func (interpreter *Interpreter) visitNilExpr() {
 }
 
 func (interpreter *Interpreter) visitStringExpr(stringExpr *StringExpr) {
-	panic("not implemented")
+	interpreter.lastResult = NewStringValue(stringExpr.Value)
+	interpreter.lastError = nil
 }
 
 func (interpreter *Interpreter) visitGroupExpr(groupExpr *GroupExpr) {
@@ -50,4 +50,9 @@ func (interpreter *Interpreter) visitUnaryExpr(unaryExpr *UnaryExpr) {
 
 func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	panic("not implemented")
+}
+
+func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {
+	ast.accept(interpreter)
+	return interpreter.lastResult, interpreter.lastError
 }
