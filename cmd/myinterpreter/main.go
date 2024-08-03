@@ -19,11 +19,31 @@ func main() {
 		tokenize(os.Args[2])
 	case "parse":
 		parse(os.Args[2])
+	case "evaluate":
+		evaluate(os.Args[2])
 	default:
 		_, _ = fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
 	}
 
+}
+
+func evaluate(filename string) {
+	fileContents, err := os.ReadFile(filename)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	interpreter := NewInterpreter(string(fileContents))
+	value, err := interpreter.Eval()
+
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error evaluating file: %v\n", err)
+		os.Exit(65)
+	}
+
+	fmt.Printf("%s\n", value)
 }
 
 func parse(filename string) {
