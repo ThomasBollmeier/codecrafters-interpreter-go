@@ -144,6 +144,8 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 			interpreter.lastResult = NewNumValue(left.(*NumValue).Value + right.(*NumValue).Value)
 		} else if leftType == VtString && rightType == VtString {
 			interpreter.lastResult = NewStringValue(left.(*StringValue).Value + right.(*StringValue).Value)
+		} else {
+			interpreter.lastError = errors.New("only two numbers or two strings are supported")
 		}
 	case "==":
 		interpreter.lastResult = NewBooleanValue(left.isEqualTo(right))
