@@ -94,16 +94,17 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	var left, right Value
 	var err error
 
+	interpreter.lastResult = nil
+	interpreter.lastError = nil
+
 	left, err = interpreter.evalAst(expr.Left)
 	if err != nil {
-		interpreter.lastResult = nil
 		interpreter.lastError = err
 		return
 	}
 
 	right, err = interpreter.evalAst(expr.Right)
 	if err != nil {
-		interpreter.lastResult = nil
 		interpreter.lastError = err
 		return
 	}
@@ -113,21 +114,28 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	bothNums := leftType == VtNumber && rightType == VtNumber
 
 	switch op := expr.Operator.GetLexeme(); op {
-	case "*", "/":
+	case "*", "/", "-": //, ">", ">=", "<", "<=":
 		if bothNums {
+			leftNum := left.(*NumValue).Value
+			rightNum := right.(*NumValue).Value
 			switch op {
 			case "*":
-				interpreter.lastResult = NewNumValue(left.(*NumValue).Value * right.(*NumValue).Value)
+				interpreter.lastResult = NewNumValue(leftNum * rightNum)
 			case "/":
-				interpreter.lastResult = NewNumValue(left.(*NumValue).Value / right.(*NumValue).Value)
+				interpreter.lastResult = NewNumValue(leftNum / rightNum)
+			case "-":
+				interpreter.lastResult = NewNumValue(leftNum - rightNum)
 			}
-			interpreter.lastError = nil
 		} else {
-			interpreter.lastResult = nil
 			interpreter.lastError = errors.New("only numbers are supported")
 		}
+	case "+":
+		if bothNums {
+			interpreter.lastResult = NewNumValue(left.(*NumValue).Value + right.(*NumValue).Value)
+		} else if leftType == VtString && rightType == VtString {
+			interpreter.lastResult = NewStringValue(left.(*StringValue).Value + right.(*StringValue).Value)
+		}
 	default:
-		interpreter.lastResult = nil
 		interpreter.lastError = errors.New(fmt.Sprintf("unsupported operator %s", op))
 	}
 
