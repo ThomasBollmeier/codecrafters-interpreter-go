@@ -36,11 +36,15 @@ func evaluate(filename string) {
 	}
 
 	interpreter := NewInterpreter(string(fileContents))
-	value, err := interpreter.Eval()
+	value, err, isRuntimeError := interpreter.Eval()
 
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error evaluating file: %v\n", err)
-		os.Exit(65)
+		if isRuntimeError {
+			os.Exit(70)
+		} else {
+			os.Exit(65)
+		}
 	}
 
 	fmt.Printf("%s\n", value)

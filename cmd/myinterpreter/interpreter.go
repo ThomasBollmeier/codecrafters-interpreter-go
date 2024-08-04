@@ -17,12 +17,14 @@ func NewInterpreter(code string) *Interpreter {
 	}
 }
 
-func (interpreter *Interpreter) Eval() (Value, error) {
+func (interpreter *Interpreter) Eval() (Value, error, bool) {
 	ast, err := interpreter.parser.Parse()
 	if err != nil {
-		return nil, err
+		return nil, err, false
 	}
-	return interpreter.evalAst(ast)
+	var value Value
+	value, err = interpreter.evalAst(ast)
+	return value, err, err != nil
 }
 
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
