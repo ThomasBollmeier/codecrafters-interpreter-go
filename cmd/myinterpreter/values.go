@@ -16,6 +16,7 @@ const (
 
 type Value interface {
 	getType() ValueType
+	isEqualTo(Value) bool
 }
 
 type NumValue struct {
@@ -28,6 +29,13 @@ func NewNumValue(v float64) *NumValue {
 
 func (n *NumValue) getType() ValueType {
 	return VtNumber
+}
+
+func (n *NumValue) isEqualTo(other Value) bool {
+	if other == nil || other.getType() != n.getType() {
+		return false
+	}
+	return n.Value == other.(*NumValue).Value
 }
 
 func (n *NumValue) String() string {
@@ -52,6 +60,13 @@ func (b *BooleanValue) getType() ValueType {
 	return VtBoolean
 }
 
+func (b *BooleanValue) isEqualTo(other Value) bool {
+	if other == nil || other.getType() != b.getType() {
+		return false
+	}
+	return b.Value == other.(*BooleanValue).Value
+}
+
 func (b *BooleanValue) String() string {
 	if b.Value {
 		return "true"
@@ -70,6 +85,13 @@ func (n *NilValue) getType() ValueType {
 	return VtNil
 }
 
+func (n *NilValue) isEqualTo(other Value) bool {
+	if other == nil || other.getType() != n.getType() {
+		return false
+	}
+	return true
+}
+
 func (n *NilValue) String() string {
 	return "nil"
 }
@@ -84,6 +106,13 @@ func NewStringValue(v string) *StringValue {
 
 func (s *StringValue) getType() ValueType {
 	return VtString
+}
+
+func (s *StringValue) isEqualTo(other Value) bool {
+	if other == nil || other.getType() != s.getType() {
+		return false
+	}
+	return s.Value == other.(*StringValue).Value
 }
 
 func (s *StringValue) String() string {

@@ -143,6 +143,10 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 		} else if leftType == VtString && rightType == VtString {
 			interpreter.lastResult = NewStringValue(left.(*StringValue).Value + right.(*StringValue).Value)
 		}
+	case "==":
+		interpreter.lastResult = NewBooleanValue(left.isEqualTo(right))
+	case "!=":
+		interpreter.lastResult = NewBooleanValue(!left.isEqualTo(right))
 	default:
 		interpreter.lastError = errors.New(fmt.Sprintf("unsupported operator %s", op))
 	}
