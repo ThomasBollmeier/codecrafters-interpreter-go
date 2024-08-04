@@ -114,7 +114,7 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	bothNums := leftType == VtNumber && rightType == VtNumber
 
 	switch op := expr.Operator.GetLexeme(); op {
-	case "*", "/", "-": //, ">", ">=", "<", "<=":
+	case "*", "/", "-", ">", ">=", "<", "<=":
 		if bothNums {
 			leftNum := left.(*NumValue).Value
 			rightNum := right.(*NumValue).Value
@@ -125,6 +125,14 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 				interpreter.lastResult = NewNumValue(leftNum / rightNum)
 			case "-":
 				interpreter.lastResult = NewNumValue(leftNum - rightNum)
+			case ">":
+				interpreter.lastResult = NewBooleanValue(leftNum > rightNum)
+			case ">=":
+				interpreter.lastResult = NewBooleanValue(leftNum >= rightNum)
+			case "<":
+				interpreter.lastResult = NewBooleanValue(leftNum < rightNum)
+			case "<=":
+				interpreter.lastResult = NewBooleanValue(leftNum <= rightNum)
 			}
 		} else {
 			interpreter.lastError = errors.New("only numbers are supported")
