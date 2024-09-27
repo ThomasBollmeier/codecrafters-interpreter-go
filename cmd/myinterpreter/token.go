@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strconv"
+	"strings"
 )
 
 type TokenType string
@@ -116,15 +116,21 @@ func (t Token) String() string {
 		if err != nil {
 			floatValue = 0.0
 		}
-		if math.Abs(floatValue-math.Round(floatValue)) > 1e-5 {
-			return fmt.Sprintf("%s %s %.4f", t.tokenType, t.lexeme, floatValue)
-		} else {
-			return fmt.Sprintf("%s %s %.1f", t.tokenType, t.lexeme, floatValue)
-		}
+		floatValueStr := floatValueToStr(floatValue)
+		return fmt.Sprintf("%s %s %s", t.tokenType, t.lexeme, floatValueStr)
+
 	default:
 		return fmt.Sprintf("%s %s null", t.tokenType, t.lexeme)
 	}
 
+}
+
+func floatValueToStr(value float64) string {
+	numStr := strings.TrimRight(fmt.Sprintf("%f", value), "0")
+	if numStr[len(numStr)-1] == uint8('.') {
+		numStr = numStr + "0"
+	}
+	return numStr
 }
 
 func (t Token) GetTokenType() TokenType {

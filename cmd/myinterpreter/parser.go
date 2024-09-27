@@ -21,11 +21,78 @@ func NewParser(content string) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (AST, error) {
+func (p *Parser) ParseProgram() (AST, error) {
+	statements := make([]Statement, 0)
+
+	var stmt Statement
+
+stmts:
+	for {
+		token, err := p.peek()
+		if err != nil {
+			return nil, err
+		}
+
+		switch token.GetTokenType() {
+		case Print:
+			stmt, err = p.parsePrintStmt()
+		case EOF:
+			_, _ = p.advance()
+			break stmts
+		default:
+			stmt, err = p.parseExprStmt()
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		statements = append(statements, stmt)
+
+	}
+
+	return NewProgram(statements), nil
+}
+
+func (p *Parser) parsePrintStmt() (AST, error) {
+	_, _ = p.advance() // consume print token
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := p.advance()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() != Semicolon {
+		return nil, errors.New("expected Semicolon")
+	}
+
+	return NewPrintStatement(expr), nil
+}
+
+func (p *Parser) parseExprStmt() (AST, error) {
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	token, err := p.advance()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() != Semicolon {
+		return nil, errors.New("expected Semicolon")
+	}
+
+	return NewExpressionStatement(expr), nil
+}
+
+func (p *Parser) ParseExpression() (AST, error) {
 	ast, err := p.parseExpr()
 	if err != nil {
 		return nil, err
 	}
+
 	token, err := p.advance()
 	if err != nil {
 		return nil, err

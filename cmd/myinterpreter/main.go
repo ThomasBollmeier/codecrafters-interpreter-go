@@ -8,7 +8,8 @@ import (
 func main() {
 
 	if len(os.Args) < 3 {
-		_, _ = fmt.Fprintln(os.Stderr, "Usage: ./your_program.sh tokenize <filename>")
+		_, _ = fmt.Fprintln(os.Stderr,
+			"Usage: ./your_program.sh [tokenize|parse|evaluate|run] <filename>")
 		os.Exit(1)
 	}
 
@@ -21,9 +22,32 @@ func main() {
 		parse(os.Args[2])
 	case "evaluate":
 		evaluate(os.Args[2])
+	case "run":
+		run(os.Args[2])
 	default:
 		_, _ = fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
+	}
+
+}
+
+func run(filename string) {
+	fileContents, err := os.ReadFile(filename)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	interpreter := NewInterpreter(string(fileContents))
+	err, isRuntimeError := interpreter.Run()
+
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error running file: %v\n", err)
+		if isRuntimeError {
+			os.Exit(70)
+		} else {
+			os.Exit(65)
+		}
 	}
 
 }
@@ -58,7 +82,7 @@ func parse(filename string) {
 	}
 
 	parser := NewParser(string(fileContents))
-	ast, err := parser.Parse()
+	ast, err := parser.ParseExpression()
 
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error parsing file: %v\n", err)

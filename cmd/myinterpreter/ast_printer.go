@@ -12,6 +12,12 @@ func NewAstPrinter() *AstPrinter {
 	return &AstPrinter{}
 }
 
+func (ap *AstPrinter) visitProgram(program *Program) {}
+
+func (ap *AstPrinter) visitPrint(printStmt *PrintStatement) {}
+
+func (ap *AstPrinter) visitExprStmt(exprStmt *ExpressionStatement) {}
+
 func (ap *AstPrinter) visitNumberExpr(num *NumberExpr) {
 	numStr := strings.TrimRight(fmt.Sprintf("%f", num.Value), "0")
 	if numStr[len(numStr)-1] == uint8('.') {

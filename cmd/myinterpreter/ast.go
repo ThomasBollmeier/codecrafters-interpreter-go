@@ -4,6 +4,46 @@ type AST interface {
 	accept(visitor AstVisitor)
 }
 
+type Statement interface {
+	AST
+}
+
+type Program struct {
+	statements []Statement
+}
+
+func NewProgram(statements []Statement) *Program {
+	return &Program{statements: statements}
+}
+
+func (p *Program) accept(visitor AstVisitor) {
+	visitor.visitProgram(p)
+}
+
+type PrintStatement struct {
+	expression AST
+}
+
+func NewPrintStatement(expression AST) *PrintStatement {
+	return &PrintStatement{expression: expression}
+}
+
+func (p *PrintStatement) accept(visitor AstVisitor) {
+	visitor.visitPrint(p)
+}
+
+type ExpressionStatement struct {
+	expression AST
+}
+
+func NewExpressionStatement(expression AST) *ExpressionStatement {
+	return &ExpressionStatement{expression: expression}
+}
+
+func (e *ExpressionStatement) accept(visitor AstVisitor) {
+	visitor.visitExprStmt(e)
+}
+
 type Expr interface {
 	AST
 }
@@ -97,6 +137,9 @@ func (binExpr *BinaryExpr) accept(visitor AstVisitor) {
 }
 
 type AstVisitor interface {
+	visitProgram(program *Program)
+	visitPrint(printStmt *PrintStatement)
+	visitExprStmt(exprStmt *ExpressionStatement)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()

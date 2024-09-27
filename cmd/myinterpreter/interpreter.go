@@ -17,8 +17,17 @@ func NewInterpreter(code string) *Interpreter {
 	}
 }
 
+func (interpreter *Interpreter) Run() (error, bool) {
+	ast, err := interpreter.parser.ParseProgram()
+	if err != nil {
+		return err, false
+	}
+	ast.accept(interpreter)
+	return interpreter.lastError, interpreter.lastError != nil
+}
+
 func (interpreter *Interpreter) Eval() (Value, error, bool) {
-	ast, err := interpreter.parser.Parse()
+	ast, err := interpreter.parser.ParseExpression()
 	if err != nil {
 		return nil, err, false
 	}
@@ -26,6 +35,21 @@ func (interpreter *Interpreter) Eval() (Value, error, bool) {
 	value, err = interpreter.evalAst(ast)
 	return value, err, err != nil
 }
+
+func (interpreter *Interpreter) visitProgram(program *Program) {
+	for _, statement := range program.statements {
+		statement.accept(interpreter)
+	}
+}
+
+func (interpreter *Interpreter) visitPrint(printStmt *PrintStatement) {
+	value, err := interpreter.evalAst(printStmt.expression)
+	if err == nil {
+		fmt.Println(value)
+	}
+}
+
+func (interpreter *Interpreter) visitExprStmt(exprStmt *ExpressionStatement) {}
 
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
 	interpreter.lastResult = NewNumValue(numberExpr.Value)
