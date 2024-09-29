@@ -31,3 +31,16 @@ func TestInterpreter_Run_Print(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_Run_Fail(t *testing.T) {
+	code := `
+		print "the expression below is invalid";
+		63 + "baz";
+		print "this should not be printed";`
+	interpreter := NewInterpreter(code)
+
+	err, _ := interpreter.Run()
+	if err == nil {
+		t.Fatalf("expected interpreter error did not occur")
+	}
+}

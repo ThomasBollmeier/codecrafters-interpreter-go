@@ -39,6 +39,9 @@ func (interpreter *Interpreter) Eval() (Value, error, bool) {
 func (interpreter *Interpreter) visitProgram(program *Program) {
 	for _, statement := range program.statements {
 		statement.accept(interpreter)
+		if interpreter.lastError != nil {
+			break
+		}
 	}
 }
 
@@ -49,7 +52,9 @@ func (interpreter *Interpreter) visitPrint(printStmt *PrintStatement) {
 	}
 }
 
-func (interpreter *Interpreter) visitExprStmt(exprStmt *ExpressionStatement) {}
+func (interpreter *Interpreter) visitExprStmt(exprStmt *ExpressionStatement) {
+	_, _ = interpreter.evalAst(exprStmt.expression)
+}
 
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
 	interpreter.lastResult = NewNumValue(numberExpr.Value)
