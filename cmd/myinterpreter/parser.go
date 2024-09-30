@@ -62,19 +62,27 @@ func (p *Parser) parseVarDecl() (AST, error) {
 		return nil, err
 	}
 
-	_, err = p.consume(Equal)
+	token, err := p.consume(Equal, Semicolon)
 	if err != nil {
 		return nil, err
 	}
 
-	expr, err := p.parseExpr()
-	if err != nil {
-		return nil, err
-	}
+	var expr Expr
 
-	_, err = p.consume(Semicolon)
-	if err != nil {
-		return nil, err
+	if token.GetTokenType() == Equal {
+
+		expr, err = p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.consume(Semicolon)
+		if err != nil {
+			return nil, err
+		}
+
+	} else {
+		expr = NewNilExpr()
 	}
 
 	return NewVarDecl(ident.GetLexeme(), expr), nil
