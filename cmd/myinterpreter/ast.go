@@ -20,6 +20,19 @@ func (p *Program) accept(visitor AstVisitor) {
 	visitor.visitProgram(p)
 }
 
+type VarDecl struct {
+	name       string
+	expression AST
+}
+
+func NewVarDecl(name string, expression AST) *VarDecl {
+	return &VarDecl{name: name, expression: expression}
+}
+
+func (v *VarDecl) accept(visitor AstVisitor) {
+	visitor.visitVarDecl(v)
+}
+
 type PrintStatement struct {
 	expression AST
 }
@@ -94,6 +107,18 @@ func (string *StringExpr) accept(visitor AstVisitor) {
 	visitor.visitStringExpr(string)
 }
 
+type IdentifierExpr struct {
+	name string
+}
+
+func NewIdentifierExpr(name string) *IdentifierExpr {
+	return &IdentifierExpr{name}
+}
+
+func (identifier *IdentifierExpr) accept(visitor AstVisitor) {
+	visitor.visitIdentifierExpr(identifier)
+}
+
 type GroupExpr struct {
 	Inner Expr
 }
@@ -138,12 +163,14 @@ func (binExpr *BinaryExpr) accept(visitor AstVisitor) {
 
 type AstVisitor interface {
 	visitProgram(program *Program)
+	visitVarDecl(varDecl *VarDecl)
 	visitPrint(printStmt *PrintStatement)
 	visitExprStmt(exprStmt *ExpressionStatement)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()
 	visitStringExpr(stringExpr *StringExpr)
+	visitIdentifierExpr(identifierExpr *IdentifierExpr)
 	visitGroupExpr(groupExpr *GroupExpr)
 	visitUnaryExpr(unaryExpr *UnaryExpr)
 	visitBinaryExpr(expr *BinaryExpr)

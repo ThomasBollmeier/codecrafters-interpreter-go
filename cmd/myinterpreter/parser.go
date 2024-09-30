@@ -34,6 +34,8 @@ stmts:
 		}
 
 		switch token.GetTokenType() {
+		case Var:
+			stmt, err = p.parseVarDecl()
 		case Print:
 			stmt, err = p.parsePrintStmt()
 		case EOF:
@@ -51,6 +53,31 @@ stmts:
 	}
 
 	return NewProgram(statements), nil
+}
+
+func (p *Parser) parseVarDecl() (AST, error) {
+	_, _ = p.advance() // consume var token
+	ident, err := p.consume(Identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(Equal)
+	if err != nil {
+		return nil, err
+	}
+
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(Semicolon)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewVarDecl(ident.GetLexeme(), expr), nil
 }
 
 func (p *Parser) parsePrintStmt() (AST, error) {
@@ -195,6 +222,8 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	case String:
 		value := strings.Trim(token.GetLexeme(), "\"")
 		return NewStringExpr(value), nil
+	case Identifier:
+		return NewIdentifierExpr(token.GetLexeme()), nil
 	case LeftParen:
 		return p.parseGroup()
 	case Bang, Minus:
@@ -239,6 +268,20 @@ func (p *Parser) advance() (TokenInfo, error) {
 	}
 
 	return p.scanner.AdvanceToken()
+}
+
+func (p *Parser) consume(expected ...TokenType) (TokenInfo, error) {
+	token, err := p.advance()
+	if err != nil {
+		return nil, err
+	}
+	for _, tokenType := range expected {
+		if token.GetTokenType() == tokenType {
+			return token, nil
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("unexpected token type &%s", token.GetTokenType()))
 }
 
 func (p *Parser) peek() (TokenInfo, error) {

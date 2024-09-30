@@ -20,6 +20,18 @@ func TestInterpreter_Eval(t *testing.T) {
 
 }
 
+func TestInterpreter_Run_VarDecl(t *testing.T) {
+	code := `
+		var a = "foo";
+		print a;`
+	interpreter := NewInterpreter(code)
+
+	err, _ := interpreter.Run()
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}
+
 func TestInterpreter_Run_Print(t *testing.T) {
 	code := `
 		print "Hallo Welt!";

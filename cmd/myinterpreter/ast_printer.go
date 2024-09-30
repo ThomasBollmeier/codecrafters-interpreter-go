@@ -14,6 +14,8 @@ func NewAstPrinter() *AstPrinter {
 
 func (ap *AstPrinter) visitProgram(program *Program) {}
 
+func (ap *AstPrinter) visitVarDecl(varDecl *VarDecl) {}
+
 func (ap *AstPrinter) visitPrint(printStmt *PrintStatement) {}
 
 func (ap *AstPrinter) visitExprStmt(exprStmt *ExpressionStatement) {}
@@ -36,6 +38,10 @@ func (ap *AstPrinter) visitNilExpr() {
 
 func (ap *AstPrinter) visitStringExpr(str *StringExpr) {
 	fmt.Printf("%s", str.Value)
+}
+
+func (ap *AstPrinter) visitIdentifierExpr(id *IdentifierExpr) {
+	fmt.Printf("id(%s)", id.name)
 }
 
 func (ap *AstPrinter) visitGroupExpr(grp *GroupExpr) {

@@ -9,11 +9,20 @@ type Interpreter struct {
 	parser     *Parser
 	lastResult Value
 	lastError  error
+	env        Environment
 }
 
 func NewInterpreter(code string) *Interpreter {
 	return &Interpreter{
 		parser: NewParser(code),
+		env:    *NewEnvironment(nil),
+	}
+}
+
+func NewInterpreterWithEnv(code string, env Environment) *Interpreter {
+	return &Interpreter{
+		parser: NewParser(code),
+		env:    env,
 	}
 }
 
@@ -45,6 +54,14 @@ func (interpreter *Interpreter) visitProgram(program *Program) {
 	}
 }
 
+func (interpreter *Interpreter) visitVarDecl(varDecl *VarDecl) {
+	value, err := interpreter.evalAst(varDecl.expression)
+	if err != nil {
+		return
+	}
+	interpreter.env.Set(varDecl.name, value)
+}
+
 func (interpreter *Interpreter) visitPrint(printStmt *PrintStatement) {
 	value, err := interpreter.evalAst(printStmt.expression)
 	if err == nil {
@@ -74,6 +91,10 @@ func (interpreter *Interpreter) visitNilExpr() {
 func (interpreter *Interpreter) visitStringExpr(stringExpr *StringExpr) {
 	interpreter.lastResult = NewStringValue(stringExpr.Value)
 	interpreter.lastError = nil
+}
+
+func (interpreter *Interpreter) visitIdentifierExpr(identifierExpr *IdentifierExpr) {
+	interpreter.lastResult, interpreter.lastError = interpreter.env.Get(identifierExpr.name)
 }
 
 func (interpreter *Interpreter) visitGroupExpr(groupExpr *GroupExpr) {
