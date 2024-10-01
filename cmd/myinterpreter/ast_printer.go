@@ -64,3 +64,10 @@ func (ap *AstPrinter) visitBinaryExpr(binExpr *BinaryExpr) {
 	binExpr.Right.accept(ap)
 	fmt.Printf(")")
 }
+
+func (ap *AstPrinter) visitAssignment(assignment *Assignment) {
+	fmt.Printf("(= %s", assignment.left)
+	fmt.Printf(" ")
+	assignment.right.accept(ap)
+	fmt.Printf(")")
+}

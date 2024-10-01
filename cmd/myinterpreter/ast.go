@@ -161,6 +161,19 @@ func (binExpr *BinaryExpr) accept(visitor AstVisitor) {
 	visitor.visitBinaryExpr(binExpr)
 }
 
+type Assignment struct {
+	left  string
+	right Expr
+}
+
+func NewAssignment(left string, right Expr) *Assignment {
+	return &Assignment{left: left, right: right}
+}
+
+func (assignment *Assignment) accept(visitor AstVisitor) {
+	visitor.visitAssignment(assignment)
+}
+
 type AstVisitor interface {
 	visitProgram(program *Program)
 	visitVarDecl(varDecl *VarDecl)
@@ -174,4 +187,5 @@ type AstVisitor interface {
 	visitGroupExpr(groupExpr *GroupExpr)
 	visitUnaryExpr(unaryExpr *UnaryExpr)
 	visitBinaryExpr(expr *BinaryExpr)
+	visitAssignment(assignment *Assignment)
 }

@@ -139,31 +139,57 @@ func (p *Parser) ParseExpression() (AST, error) {
 }
 
 func (p *Parser) parseExpr() (Expr, error) {
+	nextTokens := p.peekNTokens(2)
+	if len(nextTokens) == 2 {
+		if nextTokens[0].GetTokenType() == Identifier && nextTokens[1].GetTokenType() == Equal {
+			// Assignment:
+			_, _ = p.advance()
+			_, _ = p.advance()
+			ident := nextTokens[0].GetLexeme()
+			rhs, err := p.parseExpr()
+			if err != nil {
+				return nil, err
+			}
+			return NewAssignment(ident, rhs), nil
+		} else {
+			return p.parseEquality()
+		}
+	} else {
+		return p.parseEquality()
+	}
+}
+
+func (p *Parser) parseEquality() (Expr, error) {
 	return p.parseBinary(
 		[]TokenType{EqualEqual, BangEqual},
+		true,
 		func() (Expr, error) { return p.parseComparison() })
 }
 
 func (p *Parser) parseComparison() (Expr, error) {
 	return p.parseBinary(
 		[]TokenType{Greater, GreaterEqual, Less, LessEqual},
+		true,
 		func() (Expr, error) { return p.parseSum() })
 }
 
 func (p *Parser) parseSum() (Expr, error) {
 	return p.parseBinary(
 		[]TokenType{Plus, Minus},
+		true,
 		func() (Expr, error) { return p.parseTerm() })
 }
 
 func (p *Parser) parseTerm() (Expr, error) {
 	return p.parseBinary(
 		[]TokenType{Star, Slash},
+		true,
 		func() (Expr, error) { return p.parseAtomic() })
 }
 
 func (p *Parser) parseBinary(
 	operatorTypes []TokenType,
+	leftAssoc bool,
 	parseFunc func() (Expr, error)) (Expr, error) {
 
 	var operands []Expr
@@ -201,11 +227,23 @@ loop:
 
 	var ret *BinaryExpr
 
-	for i, op := range operators {
-		if ret == nil {
-			ret = NewBinaryExpr(op, operands[i], operands[i+1])
-		} else {
-			ret = NewBinaryExpr(op, ret, operands[i+1])
+	if leftAssoc {
+		for i, op := range operators {
+			if ret == nil {
+				ret = NewBinaryExpr(op, operands[i], operands[i+1])
+			} else {
+				ret = NewBinaryExpr(op, ret, operands[i+1])
+			}
+		}
+	} else {
+		n := len(operators)
+		for i := n - 1; i >= 0; i-- {
+			op := operators[i]
+			if i == n-1 {
+				ret = NewBinaryExpr(op, operands[i], operands[i+1])
+			} else {
+				ret = NewBinaryExpr(op, operands[i], ret)
+			}
 		}
 	}
 
@@ -283,13 +321,17 @@ func (p *Parser) consume(expected ...TokenType) (TokenInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, tokenType := range expected {
-		if token.GetTokenType() == tokenType {
-			return token, nil
-		}
-	}
 
-	return nil, errors.New(fmt.Sprintf("unexpected token type &%s", token.GetTokenType()))
+	if len(expected) > 0 {
+		for _, tokenType := range expected {
+			if token.GetTokenType() == tokenType {
+				return token, nil
+			}
+		}
+		return nil, errors.New(fmt.Sprintf("unexpected token type &%s", token.GetTokenType()))
+	} else {
+		return token, nil
+	}
 }
 
 func (p *Parser) peek() (TokenInfo, error) {

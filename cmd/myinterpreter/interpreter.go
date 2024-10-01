@@ -207,6 +207,14 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 
 }
 
+func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
+	value, err := interpreter.evalAst(assignment.right)
+	if err != nil {
+		return
+	}
+	interpreter.env.Set(assignment.left, value)
+}
+
 func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {
 	ast.accept(interpreter)
 	return interpreter.lastResult, interpreter.lastError
