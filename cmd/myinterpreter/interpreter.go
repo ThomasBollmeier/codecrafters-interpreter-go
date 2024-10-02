@@ -219,7 +219,11 @@ func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
 	if err != nil {
 		return
 	}
-	interpreter.env.Set(assignment.left, value)
+	defEnv, err := interpreter.env.GetDefiningEnv(assignment.left)
+	if err != nil {
+		return
+	}
+	defEnv.Set(assignment.left, value)
 }
 
 func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {

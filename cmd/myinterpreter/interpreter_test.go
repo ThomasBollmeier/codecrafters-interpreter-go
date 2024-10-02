@@ -60,21 +60,18 @@ func TestInterpreter_Run_Fail(t *testing.T) {
 func TestInterpreter_Run_Block(t *testing.T) {
 	code := `
 		{
-			var hello = 88;
+			var bar = "outer bar";
+			var quz = "outer quz";
 			{
-				var foo = 88;
-				print foo;
+				bar = "modified bar";
+				var quz = "inner quz";
+				print bar;
+				print quz;
 			}
-			print hello;
+			print bar;
+			print quz;
 		}
-		{
-			var world = "before";
-			print world;
-		}
-		{
-			var world = "after";
-			print world;
-		}`
+		print quz;`
 	interpreter := NewInterpreter(code)
 
 	err, _ := interpreter.Run()
