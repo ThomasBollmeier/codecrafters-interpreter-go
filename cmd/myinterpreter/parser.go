@@ -22,8 +22,16 @@ func NewParser(content string) *Parser {
 }
 
 func (p *Parser) ParseProgram() (AST, error) {
-	statements := make([]Statement, 0)
+	statements, err := p.parseStatements()
+	if err != nil {
+		return nil, err
+	}
 
+	return NewProgram(statements), nil
+}
+
+func (p *Parser) parseStatements() ([]Statement, error) {
+	statements := make([]Statement, 0)
 	var stmt Statement
 
 stmts:
@@ -38,6 +46,10 @@ stmts:
 			stmt, err = p.parseVarDecl()
 		case Print:
 			stmt, err = p.parsePrintStmt()
+		case LeftBrace:
+			stmt, err = p.parseBlock()
+		case RightBrace:
+			break stmts
 		case EOF:
 			_, _ = p.advance()
 			break stmts
@@ -52,7 +64,23 @@ stmts:
 
 	}
 
-	return NewProgram(statements), nil
+	return statements, nil
+}
+
+func (p *Parser) parseBlock() (AST, error) {
+	_, _ = p.consume(LeftBrace)
+
+	statements, err := p.parseStatements()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(RightBrace)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewBlock(statements), nil
 }
 
 func (p *Parser) parseVarDecl() (AST, error) {

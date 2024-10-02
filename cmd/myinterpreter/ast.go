@@ -20,6 +20,18 @@ func (p *Program) accept(visitor AstVisitor) {
 	visitor.visitProgram(p)
 }
 
+type Block struct {
+	statements []Statement
+}
+
+func NewBlock(statements []Statement) *Block {
+	return &Block{statements: statements}
+}
+
+func (b *Block) accept(visitor AstVisitor) {
+	visitor.visitBlock(b)
+}
+
 type VarDecl struct {
 	name       string
 	expression AST
@@ -176,6 +188,7 @@ func (assignment *Assignment) accept(visitor AstVisitor) {
 
 type AstVisitor interface {
 	visitProgram(program *Program)
+	visitBlock(block *Block)
 	visitVarDecl(varDecl *VarDecl)
 	visitPrint(printStmt *PrintStatement)
 	visitExprStmt(exprStmt *ExpressionStatement)

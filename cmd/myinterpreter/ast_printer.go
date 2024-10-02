@@ -14,6 +14,8 @@ func NewAstPrinter() *AstPrinter {
 
 func (ap *AstPrinter) visitProgram(program *Program) {}
 
+func (ap *AstPrinter) visitBlock(block *Block) {}
+
 func (ap *AstPrinter) visitVarDecl(varDecl *VarDecl) {}
 
 func (ap *AstPrinter) visitPrint(printStmt *PrintStatement) {}

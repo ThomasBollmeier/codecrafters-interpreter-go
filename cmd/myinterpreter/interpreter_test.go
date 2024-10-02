@@ -56,3 +56,29 @@ func TestInterpreter_Run_Fail(t *testing.T) {
 		t.Fatalf("expected interpreter error did not occur")
 	}
 }
+
+func TestInterpreter_Run_Block(t *testing.T) {
+	code := `
+		{
+			var hello = 88;
+			{
+				var foo = 88;
+				print foo;
+			}
+			print hello;
+		}
+		{
+			var world = "before";
+			print world;
+		}
+		{
+			var world = "after";
+			print world;
+		}`
+	interpreter := NewInterpreter(code)
+
+	err, _ := interpreter.Run()
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

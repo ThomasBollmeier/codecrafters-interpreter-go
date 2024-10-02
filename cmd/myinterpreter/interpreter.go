@@ -9,20 +9,13 @@ type Interpreter struct {
 	parser     *Parser
 	lastResult Value
 	lastError  error
-	env        Environment
+	env        *Environment
 }
 
 func NewInterpreter(code string) *Interpreter {
 	return &Interpreter{
 		parser: NewParser(code),
-		env:    *NewEnvironment(nil),
-	}
-}
-
-func NewInterpreterWithEnv(code string, env Environment) *Interpreter {
-	return &Interpreter{
-		parser: NewParser(code),
-		env:    env,
+		env:    NewEnvironment(nil),
 	}
 }
 
@@ -52,6 +45,20 @@ func (interpreter *Interpreter) visitProgram(program *Program) {
 			break
 		}
 	}
+}
+
+func (interpreter *Interpreter) visitBlock(block *Block) {
+	blockEnv := NewEnvironment(interpreter.env)
+	interpreter.env = blockEnv
+
+	for _, statement := range block.statements {
+		statement.accept(interpreter)
+		if interpreter.lastError != nil {
+			break
+		}
+	}
+
+	interpreter.env = blockEnv.parent
 }
 
 func (interpreter *Interpreter) visitVarDecl(varDecl *VarDecl) {
