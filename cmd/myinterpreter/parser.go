@@ -42,29 +42,89 @@ stmts:
 		}
 
 		switch token.GetTokenType() {
-		case Var:
-			stmt, err = p.parseVarDecl()
-		case Print:
-			stmt, err = p.parsePrintStmt()
-		case LeftBrace:
-			stmt, err = p.parseBlock()
 		case RightBrace:
 			break stmts
 		case EOF:
 			_, _ = p.advance()
 			break stmts
-		default:
-			stmt, err = p.parseExprStmt()
 		}
 
+		stmt, err = p.parseStatement(token)
 		if err != nil {
 			return nil, err
 		}
 		statements = append(statements, stmt)
-
 	}
 
 	return statements, nil
+}
+
+func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
+	var stmt Statement
+	var token TokenInfo
+	var err error
+
+	if nextToken != nil {
+		token = nextToken
+	} else {
+		token, err = p.peek()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	switch token.GetTokenType() {
+	case Var:
+		stmt, err = p.parseVarDecl()
+	case Print:
+		stmt, err = p.parsePrintStmt()
+	case If:
+		stmt, err = p.parseIfStmt()
+	case LeftBrace:
+		stmt, err = p.parseBlock()
+	default:
+		stmt, err = p.parseExprStmt()
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stmt, nil
+}
+
+func (p *Parser) parseIfStmt() (Statement, error) {
+	_, err := p.consume(If)
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(LeftParen)
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(RightParen)
+	if err != nil {
+		return nil, err
+	}
+	consequent, err := p.parseStatement(nil)
+	if err != nil {
+		return nil, err
+	}
+	var alternate Statement = nil
+	token, err := p.peek()
+	if err == nil && token.GetTokenType() == Else {
+		_, _ = p.advance()
+		alternate, err = p.parseStatement(nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return NewIfStatement(condition, consequent, alternate), nil
 }
 
 func (p *Parser) parseBlock() (AST, error) {

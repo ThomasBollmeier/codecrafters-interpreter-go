@@ -69,6 +69,20 @@ func (e *ExpressionStatement) accept(visitor AstVisitor) {
 	visitor.visitExprStmt(e)
 }
 
+type IfStatement struct {
+	condition  Expr
+	consequent Statement
+	alternate  Statement
+}
+
+func NewIfStatement(condition Expr, consequent, alternate Statement) *IfStatement {
+	return &IfStatement{condition, consequent, alternate}
+}
+
+func (i *IfStatement) accept(visitor AstVisitor) {
+	visitor.visitIfStmt(i)
+}
+
 type Expr interface {
 	AST
 }
@@ -192,6 +206,7 @@ type AstVisitor interface {
 	visitVarDecl(varDecl *VarDecl)
 	visitPrint(printStmt *PrintStatement)
 	visitExprStmt(exprStmt *ExpressionStatement)
+	visitIfStmt(ifStmt *IfStatement)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()

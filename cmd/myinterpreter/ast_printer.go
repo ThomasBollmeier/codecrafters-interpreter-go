@@ -22,6 +22,8 @@ func (ap *AstPrinter) visitPrint(printStmt *PrintStatement) {}
 
 func (ap *AstPrinter) visitExprStmt(exprStmt *ExpressionStatement) {}
 
+func (ap *AstPrinter) visitIfStmt(ifStmt *IfStatement) {}
+
 func (ap *AstPrinter) visitNumberExpr(num *NumberExpr) {
 	numStr := strings.TrimRight(fmt.Sprintf("%f", num.Value), "0")
 	if numStr[len(numStr)-1] == uint8('.') {

@@ -80,6 +80,37 @@ func (interpreter *Interpreter) visitExprStmt(exprStmt *ExpressionStatement) {
 	_, _ = interpreter.evalAst(exprStmt.expression)
 }
 
+func (interpreter *Interpreter) visitIfStmt(ifStmt *IfStatement) {
+	value, err := interpreter.evalAst(ifStmt.condition)
+	if err != nil {
+		return
+	}
+	if value.getType() != VtBoolean {
+		interpreter.lastResult = nil
+		interpreter.lastError = errors.New("condition value must be boolean")
+		return
+	}
+	condition := value.(*BooleanValue).Value
+	if condition {
+		value, err = interpreter.evalAst(ifStmt.consequent)
+		if err != nil {
+			return
+		}
+		interpreter.lastResult = value
+		interpreter.lastError = nil
+	} else if ifStmt.alternate != nil {
+		value, err = interpreter.evalAst(ifStmt.alternate)
+		if err != nil {
+			return
+		}
+		interpreter.lastResult = value
+		interpreter.lastError = nil
+	} else {
+		interpreter.lastResult = NewNilValue()
+		interpreter.lastError = nil
+	}
+}
+
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
 	interpreter.lastResult = NewNumValue(numberExpr.Value)
 	interpreter.lastError = nil
