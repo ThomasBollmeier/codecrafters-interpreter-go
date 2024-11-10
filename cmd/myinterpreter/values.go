@@ -129,7 +129,7 @@ func (s *StringValue) isEqualTo(other Value) bool {
 }
 
 func (s *StringValue) isTruthy() bool {
-	return s.Value != ""
+	return true
 }
 
 func (s *StringValue) String() string {
