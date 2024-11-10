@@ -83,6 +83,19 @@ func (i *IfStatement) accept(visitor AstVisitor) {
 	visitor.visitIfStmt(i)
 }
 
+type WhileStatement struct {
+	condition Expr
+	statement Statement
+}
+
+func NewWhileStatement(condition Expr, statement Statement) *WhileStatement {
+	return &WhileStatement{condition, statement}
+}
+
+func (w *WhileStatement) accept(visitor AstVisitor) {
+	visitor.visitWhileStmt(w)
+}
+
 type Expr interface {
 	AST
 }
@@ -207,6 +220,7 @@ type AstVisitor interface {
 	visitPrint(printStmt *PrintStatement)
 	visitExprStmt(exprStmt *ExpressionStatement)
 	visitIfStmt(ifStmt *IfStatement)
+	visitWhileStmt(whileStmt *WhileStatement)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()

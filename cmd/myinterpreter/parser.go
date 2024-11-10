@@ -80,6 +80,8 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 		stmt, err = p.parsePrintStmt()
 	case If:
 		stmt, err = p.parseIfStmt()
+	case While:
+		stmt, err = p.parseWhileStmt()
 	case LeftBrace:
 		stmt, err = p.parseBlock()
 	default:
@@ -91,6 +93,32 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 	}
 
 	return stmt, nil
+}
+
+func (p *Parser) parseWhileStmt() (Statement, error) {
+	_, err := p.consume(While)
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(LeftParen)
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(RightParen)
+	if err != nil {
+		return nil, err
+	}
+
+	statement, err := p.parseStatement(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWhileStatement(condition, statement), nil
 }
 
 func (p *Parser) parseIfStmt() (Statement, error) {

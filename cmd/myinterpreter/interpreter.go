@@ -105,6 +105,25 @@ func (interpreter *Interpreter) visitIfStmt(ifStmt *IfStatement) {
 	}
 }
 
+func (interpreter *Interpreter) visitWhileStmt(whileStmt *WhileStatement) {
+	for {
+		condition, err := interpreter.evalAst(whileStmt.condition)
+		if err != nil {
+			return
+		}
+		if !condition.isTruthy() {
+			break
+		}
+
+		_, err = interpreter.evalAst(whileStmt.statement)
+		if err != nil {
+			return
+		}
+	}
+	interpreter.lastResult = NewNilValue()
+	interpreter.lastError = nil
+}
+
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
 	interpreter.lastResult = NewNumValue(numberExpr.Value)
 	interpreter.lastError = nil

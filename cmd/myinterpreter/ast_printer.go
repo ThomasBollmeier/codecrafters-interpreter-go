@@ -12,17 +12,19 @@ func NewAstPrinter() *AstPrinter {
 	return &AstPrinter{}
 }
 
-func (ap *AstPrinter) visitProgram(program *Program) {}
+func (ap *AstPrinter) visitProgram(*Program) {}
 
-func (ap *AstPrinter) visitBlock(block *Block) {}
+func (ap *AstPrinter) visitBlock(*Block) {}
 
-func (ap *AstPrinter) visitVarDecl(varDecl *VarDecl) {}
+func (ap *AstPrinter) visitVarDecl(*VarDecl) {}
 
-func (ap *AstPrinter) visitPrint(printStmt *PrintStatement) {}
+func (ap *AstPrinter) visitPrint(*PrintStatement) {}
 
-func (ap *AstPrinter) visitExprStmt(exprStmt *ExpressionStatement) {}
+func (ap *AstPrinter) visitExprStmt(*ExpressionStatement) {}
 
-func (ap *AstPrinter) visitIfStmt(ifStmt *IfStatement) {}
+func (ap *AstPrinter) visitIfStmt(*IfStatement) {}
+
+func (ap *AstPrinter) visitWhileStmt(*WhileStatement) {}
 
 func (ap *AstPrinter) visitNumberExpr(num *NumberExpr) {
 	numStr := strings.TrimRight(fmt.Sprintf("%f", num.Value), "0")
