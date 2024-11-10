@@ -240,11 +240,25 @@ func (p *Parser) parseExpr() (Expr, error) {
 			}
 			return NewAssignment(ident, rhs), nil
 		} else {
-			return p.parseEquality()
+			return p.parseDisjunction()
 		}
 	} else {
-		return p.parseEquality()
+		return p.parseDisjunction()
 	}
+}
+
+func (p *Parser) parseDisjunction() (Expr, error) {
+	return p.parseBinary(
+		[]TokenType{Or},
+		true,
+		func() (Expr, error) { return p.parseConjunction() })
+}
+
+func (p *Parser) parseConjunction() (Expr, error) {
+	return p.parseBinary(
+		[]TokenType{And},
+		true,
+		func() (Expr, error) { return p.parseEquality() })
 }
 
 func (p *Parser) parseEquality() (Expr, error) {

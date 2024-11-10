@@ -85,13 +85,7 @@ func (interpreter *Interpreter) visitIfStmt(ifStmt *IfStatement) {
 	if err != nil {
 		return
 	}
-	if value.getType() != VtBoolean {
-		interpreter.lastResult = nil
-		interpreter.lastError = errors.New("condition value must be boolean")
-		return
-	}
-	condition := value.(*BooleanValue).Value
-	if condition {
+	if value.isTruthy() {
 		value, err = interpreter.evalAst(ifStmt.consequent)
 		if err != nil {
 			return
@@ -184,6 +178,17 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	var left, right Value
 	var err error
 
+	op := expr.Operator.GetLexeme()
+
+	switch op {
+	case "and":
+		interpreter.lastResult, interpreter.lastError = interpreter.evalConjunction(expr)
+		return
+	case "or":
+		interpreter.lastResult, interpreter.lastError = interpreter.evalDisjunction(expr)
+		return
+	}
+
 	interpreter.lastResult = nil
 	interpreter.lastError = nil
 
@@ -203,7 +208,7 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	rightType := right.getType()
 	bothNums := leftType == VtNumber && rightType == VtNumber
 
-	switch op := expr.Operator.GetLexeme(); op {
+	switch op {
 	case "*", "/", "-", ">", ">=", "<", "<=":
 		if bothNums {
 			leftNum := left.(*NumValue).Value
@@ -243,6 +248,36 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 		interpreter.lastError = errors.New(fmt.Sprintf("unsupported operator %s", op))
 	}
 
+}
+
+func (interpreter *Interpreter) evalDisjunction(expr *BinaryExpr) (Value, error) {
+	left, err := interpreter.evalAst(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	if left.isTruthy() {
+		return left, nil
+	}
+	right, err := interpreter.evalAst(expr.Right)
+	if err != nil {
+		return nil, err
+	}
+	return right, nil
+}
+
+func (interpreter *Interpreter) evalConjunction(expr *BinaryExpr) (Value, error) {
+	left, err := interpreter.evalAst(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	if !left.isTruthy() {
+		return left, nil
+	}
+	right, err := interpreter.evalAst(expr.Right)
+	if err != nil {
+		return nil, err
+	}
+	return right, nil
 }
 
 func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {

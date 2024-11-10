@@ -17,6 +17,7 @@ const (
 type Value interface {
 	getType() ValueType
 	isEqualTo(Value) bool
+	isTruthy() bool
 }
 
 type NumValue struct {
@@ -36,6 +37,10 @@ func (n *NumValue) isEqualTo(other Value) bool {
 		return false
 	}
 	return n.Value == other.(*NumValue).Value
+}
+
+func (n *NumValue) isTruthy() bool {
+	return n.Value != 0
 }
 
 func (n *NumValue) String() string {
@@ -67,6 +72,10 @@ func (b *BooleanValue) isEqualTo(other Value) bool {
 	return b.Value == other.(*BooleanValue).Value
 }
 
+func (b *BooleanValue) isTruthy() bool {
+	return b.Value
+}
+
 func (b *BooleanValue) String() string {
 	if b.Value {
 		return "true"
@@ -92,6 +101,10 @@ func (n *NilValue) isEqualTo(other Value) bool {
 	return true
 }
 
+func (n *NilValue) isTruthy() bool {
+	return false
+}
+
 func (n *NilValue) String() string {
 	return "nil"
 }
@@ -113,6 +126,10 @@ func (s *StringValue) isEqualTo(other Value) bool {
 		return false
 	}
 	return s.Value == other.(*StringValue).Value
+}
+
+func (s *StringValue) isTruthy() bool {
+	return s.Value != ""
 }
 
 func (s *StringValue) String() string {
