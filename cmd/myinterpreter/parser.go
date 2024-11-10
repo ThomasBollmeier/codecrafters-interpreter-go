@@ -82,6 +82,8 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 		stmt, err = p.parseIfStmt()
 	case While:
 		stmt, err = p.parseWhileStmt()
+	case For:
+		stmt, err = p.parseForStmt()
 	case LeftBrace:
 		stmt, err = p.parseBlock()
 	default:
@@ -93,6 +95,75 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 	}
 
 	return stmt, nil
+}
+
+func (p *Parser) parseForStmt() (Statement, error) {
+	_, err := p.consume(For)
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(LeftParen)
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer Statement
+	nextToken, err := p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if nextToken.GetTokenType() != Semicolon {
+		initializer, err = p.parseStatement(nil)
+		if err != nil {
+			return nil, err
+		}
+		_, isVarDecl := initializer.(*VarDecl)
+		_, isExprStmt := initializer.(*ExpressionStatement)
+		if !isVarDecl && !isExprStmt {
+			return nil, errors.New("for initializer must be var decl. or expression statement")
+		}
+	} else {
+		_, _ = p.advance()
+	}
+
+	var condition Expr
+	nextToken, err = p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if nextToken.GetTokenType() != Semicolon {
+		condition, err = p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(Semicolon)
+	if err != nil {
+		return nil, err
+	}
+
+	var increment Expr
+	nextToken, err = p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if nextToken.GetTokenType() != RightParen {
+		increment, err = p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(RightParen)
+	if err != nil {
+		return nil, err
+	}
+
+	statement, err := p.parseStatement(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewForStatement(initializer, condition, increment, statement), nil
 }
 
 func (p *Parser) parseWhileStmt() (Statement, error) {

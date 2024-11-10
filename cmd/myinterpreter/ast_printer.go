@@ -26,6 +26,8 @@ func (ap *AstPrinter) visitIfStmt(*IfStatement) {}
 
 func (ap *AstPrinter) visitWhileStmt(*WhileStatement) {}
 
+func (ap *AstPrinter) visitForStmt(*ForStatement) {}
+
 func (ap *AstPrinter) visitNumberExpr(num *NumberExpr) {
 	numStr := strings.TrimRight(fmt.Sprintf("%f", num.Value), "0")
 	if numStr[len(numStr)-1] == uint8('.') {

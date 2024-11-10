@@ -124,6 +124,47 @@ func (interpreter *Interpreter) visitWhileStmt(whileStmt *WhileStatement) {
 	interpreter.lastError = nil
 }
 
+func (interpreter *Interpreter) visitForStmt(forStmt *ForStatement) {
+	var err error
+
+	if forStmt.initializer != nil {
+		_, err = interpreter.evalAst(forStmt.initializer)
+		if err != nil {
+			return
+		}
+	}
+
+	var condVal Value
+
+	for {
+		if forStmt.condition != nil {
+			condVal, err = interpreter.evalAst(forStmt.condition)
+			if err != nil {
+				return
+			}
+			if !condVal.isTruthy() {
+				break
+			}
+		}
+
+		_, err = interpreter.evalAst(forStmt.statement)
+		if err != nil {
+			return
+		}
+
+		if forStmt.increment != nil {
+			_, err = interpreter.evalAst(forStmt.increment)
+			if err != nil {
+				return
+			}
+		}
+	}
+
+	interpreter.lastResult = NewNilValue()
+	interpreter.lastError = nil
+
+}
+
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {
 	interpreter.lastResult = NewNumValue(numberExpr.Value)
 	interpreter.lastError = nil

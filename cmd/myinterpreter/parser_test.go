@@ -39,3 +39,16 @@ func TestParser_ParseLogicalExpression(t *testing.T) {
 
 	ast.accept(NewAstPrinter())
 }
+
+func TestParser_ParseForStmt(t *testing.T) {
+	code := `for (var foo = 0; foo < 3;) 
+		print foo = foo + 1;`
+	parser := NewParser(code)
+
+	ast, err := parser.ParseProgram()
+	if err != nil {
+		t.Fatalf("parser.ParseExpression() error = %v", err)
+	}
+
+	ast.accept(NewAstPrinter())
+}

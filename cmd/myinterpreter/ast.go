@@ -96,6 +96,21 @@ func (w *WhileStatement) accept(visitor AstVisitor) {
 	visitor.visitWhileStmt(w)
 }
 
+type ForStatement struct {
+	initializer Statement
+	condition   Expr
+	increment   Expr
+	statement   Statement
+}
+
+func NewForStatement(initializer Statement, condition Expr, increment, statement Statement) *ForStatement {
+	return &ForStatement{initializer, condition, increment, statement}
+}
+
+func (f *ForStatement) accept(visitor AstVisitor) {
+	visitor.visitForStmt(f)
+}
+
 type Expr interface {
 	AST
 }
@@ -221,6 +236,7 @@ type AstVisitor interface {
 	visitExprStmt(exprStmt *ExpressionStatement)
 	visitIfStmt(ifStmt *IfStatement)
 	visitWhileStmt(whileStmt *WhileStatement)
+	visitForStmt(f *ForStatement)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()
