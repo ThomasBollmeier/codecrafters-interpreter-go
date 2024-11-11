@@ -22,7 +22,7 @@ func NewParser(content string) *Parser {
 }
 
 func (p *Parser) ParseProgram() (AST, error) {
-	statements, err := p.parseStatements()
+	statements, err := p.parseDeclarations()
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (p *Parser) ParseProgram() (AST, error) {
 	return NewProgram(statements), nil
 }
 
-func (p *Parser) parseStatements() ([]Statement, error) {
+func (p *Parser) parseDeclarations() ([]Statement, error) {
 	statements := make([]Statement, 0)
 	var stmt Statement
 
@@ -49,7 +49,7 @@ stmts:
 			break stmts
 		}
 
-		stmt, err = p.parseStatement(token)
+		stmt, err = p.parseDeclaration(token)
 		if err != nil {
 			return nil, err
 		}
@@ -57,6 +57,28 @@ stmts:
 	}
 
 	return statements, nil
+}
+
+func (p *Parser) parseDeclaration(nextToken TokenInfo) (Statement, error) {
+
+	var token TokenInfo
+	var err error
+
+	if nextToken != nil {
+		token = nextToken
+	} else {
+		token, err = p.peek()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	switch token.GetTokenType() {
+	case Var:
+		return p.parseVarDecl()
+	default:
+		return p.parseStatement(token)
+	}
 }
 
 func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
@@ -74,8 +96,6 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 	}
 
 	switch token.GetTokenType() {
-	case Var:
-		stmt, err = p.parseVarDecl()
 	case Print:
 		stmt, err = p.parsePrintStmt()
 	case If:
@@ -113,7 +133,7 @@ func (p *Parser) parseForStmt() (Statement, error) {
 		return nil, err
 	}
 	if nextToken.GetTokenType() != Semicolon {
-		initializer, err = p.parseStatement(nil)
+		initializer, err = p.parseDeclaration(nil)
 		if err != nil {
 			return nil, err
 		}
@@ -229,7 +249,7 @@ func (p *Parser) parseIfStmt() (Statement, error) {
 func (p *Parser) parseBlock() (AST, error) {
 	_, _ = p.consume(LeftBrace)
 
-	statements, err := p.parseStatements()
+	statements, err := p.parseDeclarations()
 	if err != nil {
 		return nil, err
 	}
