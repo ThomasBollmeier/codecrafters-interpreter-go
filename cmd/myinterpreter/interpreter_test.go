@@ -88,3 +88,16 @@ func TestInterpreter_Call_Builtin(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_FunctionDef(t *testing.T) {
+	code := `
+	fun f3(a, b, c) { print a + b + c; }
+	f3(27, 27, 27);
+	`
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

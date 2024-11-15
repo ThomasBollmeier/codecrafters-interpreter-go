@@ -328,8 +328,11 @@ func (p *Parser) parseParameters() ([]string, error) {
 		default:
 			return nil, errors.New("expected comma or right-paren")
 		}
+		token, err = p.peek()
+		if err != nil {
+			return nil, err
+		}
 	}
-
 }
 
 func (p *Parser) parseVarDecl() (AST, error) {
