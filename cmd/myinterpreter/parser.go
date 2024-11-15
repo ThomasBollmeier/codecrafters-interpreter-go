@@ -76,6 +76,8 @@ func (p *Parser) parseDeclaration(nextToken TokenInfo) (Statement, error) {
 	switch token.GetTokenType() {
 	case Var:
 		return p.parseVarDecl()
+	case Fun:
+		return p.parseFunctionDef()
 	default:
 		return p.parseStatement(token)
 	}
@@ -247,7 +249,10 @@ func (p *Parser) parseIfStmt() (Statement, error) {
 }
 
 func (p *Parser) parseBlock() (AST, error) {
-	_, _ = p.consume(LeftBrace)
+	_, err := p.consume(LeftBrace)
+	if err != nil {
+		return nil, err
+	}
 
 	statements, err := p.parseDeclarations()
 	if err != nil {
@@ -260,6 +265,71 @@ func (p *Parser) parseBlock() (AST, error) {
 	}
 
 	return NewBlock(statements), nil
+}
+
+func (p *Parser) parseFunctionDef() (AST, error) {
+	_, err := p.consume(Fun)
+	if err != nil {
+		return nil, err
+	}
+	ident, err := p.consume(Identifier)
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(LeftParen)
+	if err != nil {
+		return nil, err
+	}
+	params, err := p.parseParameters()
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFunctionDef(
+		ident.GetLexeme(),
+		params,
+		*body.(*Block)), nil
+}
+
+func (p *Parser) parseParameters() ([]string, error) {
+	var parameters []string
+
+	token, err := p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() == RightParen {
+		_, _ = p.advance()
+		return parameters, nil
+	}
+
+	for {
+		if token.GetTokenType() == Identifier {
+			_, _ = p.advance()
+			parameters = append(parameters, token.GetLexeme())
+		} else {
+			return nil, errors.New("expected identifier as parameter")
+		}
+		token, err = p.peek()
+		if err != nil {
+			return nil, err
+		}
+		switch token.GetTokenType() {
+		case Comma:
+			_, _ = p.advance()
+		case RightParen:
+			_, _ = p.advance()
+			return parameters, nil
+		default:
+			return nil, errors.New("expected comma or right-paren")
+		}
+	}
+
 }
 
 func (p *Parser) parseVarDecl() (AST, error) {

@@ -6,21 +6,26 @@ import (
 )
 
 type Interpreter struct {
-	parser     *Parser
 	lastResult Value
 	lastError  error
 	env        *Environment
 }
 
-func NewInterpreter(code string) *Interpreter {
-	return &Interpreter{
-		parser: NewParser(code),
-		env:    NewEnvironment(nil),
+func NewInterpreter(env *Environment) *Interpreter {
+	if env == nil {
+		return &Interpreter{
+			env: NewEnvironment(nil),
+		}
+	} else {
+		return &Interpreter{
+			env: env,
+		}
 	}
 }
 
-func (interpreter *Interpreter) Run() (error, bool) {
-	ast, err := interpreter.parser.ParseProgram()
+func (interpreter *Interpreter) Run(code string) (error, bool) {
+	parser := NewParser(code)
+	ast, err := parser.ParseProgram()
 	if err != nil {
 		return err, false
 	}
@@ -28,8 +33,9 @@ func (interpreter *Interpreter) Run() (error, bool) {
 	return interpreter.lastError, interpreter.lastError != nil
 }
 
-func (interpreter *Interpreter) Eval() (Value, error, bool) {
-	ast, err := interpreter.parser.ParseExpression()
+func (interpreter *Interpreter) Eval(code string) (Value, error, bool) {
+	parser := NewParser(code)
+	ast, err := parser.ParseExpression()
 	if err != nil {
 		return nil, err, false
 	}
@@ -162,7 +168,13 @@ func (interpreter *Interpreter) visitForStmt(forStmt *ForStatement) {
 
 	interpreter.lastResult = NewNilValue()
 	interpreter.lastError = nil
+}
 
+func (interpreter *Interpreter) visitFunctionDef(funDef *FunctionDef) {
+	lambda := NewLambdaValue(funDef.name, funDef.parameters, funDef.body, *interpreter.env)
+	interpreter.env.Set(funDef.name, lambda)
+	interpreter.lastResult = NewNilValue()
+	interpreter.lastError = nil
 }
 
 func (interpreter *Interpreter) visitNumberExpr(numberExpr *NumberExpr) {

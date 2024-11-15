@@ -38,8 +38,8 @@ func run(filename string) {
 		os.Exit(1)
 	}
 
-	interpreter := NewInterpreter(string(fileContents))
-	err, isRuntimeError := interpreter.Run()
+	interpreter := NewInterpreter(nil)
+	err, isRuntimeError := interpreter.Run(string(fileContents))
 
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error running file: %v\n", err)
@@ -59,8 +59,8 @@ func evaluate(filename string) {
 		os.Exit(1)
 	}
 
-	interpreter := NewInterpreter(string(fileContents))
-	value, err, isRuntimeError := interpreter.Eval()
+	interpreter := NewInterpreter(nil)
+	value, err, isRuntimeError := interpreter.Eval(string(fileContents))
 
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error evaluating file: %v\n", err)

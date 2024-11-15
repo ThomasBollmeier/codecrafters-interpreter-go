@@ -111,6 +111,20 @@ func (f *ForStatement) accept(visitor AstVisitor) {
 	visitor.visitForStmt(f)
 }
 
+type FunctionDef struct {
+	name       string
+	parameters []string
+	body       Block
+}
+
+func NewFunctionDef(name string, parameters []string, body Block) *FunctionDef {
+	return &FunctionDef{name, parameters, body}
+}
+
+func (f *FunctionDef) accept(visitor AstVisitor) {
+	visitor.visitFunctionDef(f)
+}
+
 type Expr interface {
 	AST
 }
@@ -253,6 +267,7 @@ type AstVisitor interface {
 	visitIfStmt(ifStmt *IfStatement)
 	visitWhileStmt(whileStmt *WhileStatement)
 	visitForStmt(f *ForStatement)
+	visitFunctionDef(f *FunctionDef)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)
 	visitNilExpr()

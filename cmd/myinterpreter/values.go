@@ -13,6 +13,7 @@ const (
 	VtNil
 	VtString
 	VtBuiltinFunc
+	VtLambda
 )
 
 type Value interface {
@@ -172,4 +173,47 @@ func (b *BuiltinFuncValue) String() string {
 
 func (b *BuiltinFuncValue) call(args []Value) (Value, error) {
 	return b.fn(args)
+}
+
+type LambdaValue struct {
+	name       string
+	parameters []string
+	body       Block
+	env        Environment
+}
+
+func NewLambdaValue(name string, parameters []string, body Block, env Environment) *LambdaValue {
+	return &LambdaValue{name, parameters, body, env}
+}
+
+func (l *LambdaValue) getType() ValueType {
+	return VtLambda
+}
+
+func (l *LambdaValue) isEqualTo(Value) bool {
+	return false
+}
+
+func (l *LambdaValue) isTruthy() bool {
+	return true
+}
+
+func (l *LambdaValue) String() string {
+	return fmt.Sprintf("<fn %s>", l.name)
+}
+
+func (l *LambdaValue) call(args []Value) (Value, error) {
+	if len(args) != len(l.parameters) {
+		return nil, fmt.Errorf("expected %d args, got %d", len(l.parameters), len(args))
+	}
+
+	callEnv := NewEnvironment(&l.env)
+	for i, param := range l.parameters {
+		callEnv.Set(param, args[i])
+	}
+
+	interpreter := NewInterpreter(callEnv)
+	interpreter.visitBlock(&l.body)
+
+	return interpreter.lastResult, interpreter.lastError
 }
