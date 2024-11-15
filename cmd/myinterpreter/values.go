@@ -12,6 +12,7 @@ const (
 	VtBoolean
 	VtNil
 	VtString
+	VtBuiltinFunc
 )
 
 type Value interface {
@@ -134,4 +135,41 @@ func (s *StringValue) isTruthy() bool {
 
 func (s *StringValue) String() string {
 	return s.Value
+}
+
+type callable interface {
+	call(args []Value) (Value, error)
+}
+
+type BuiltinFuncValue struct {
+	name string
+	fn   func(args []Value) (Value, error)
+}
+
+func NewBuiltinFuncValue(name string, f func(args []Value) (Value, error)) *BuiltinFuncValue {
+	return &BuiltinFuncValue{name, f}
+}
+
+func (b *BuiltinFuncValue) getType() ValueType {
+	return VtBuiltinFunc
+}
+
+func (b *BuiltinFuncValue) isEqualTo(value Value) bool {
+	fn, ok := value.(*BuiltinFuncValue)
+	if !ok {
+		return false
+	}
+	return b.name == fn.name
+}
+
+func (b *BuiltinFuncValue) isTruthy() bool {
+	return true
+}
+
+func (b *BuiltinFuncValue) String() string {
+	return fmt.Sprintf("<builtin-function %s<", b.name)
+}
+
+func (b *BuiltinFuncValue) call(args []Value) (Value, error) {
+	return b.fn(args)
 }

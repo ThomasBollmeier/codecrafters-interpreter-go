@@ -8,10 +8,20 @@ type Environment struct {
 }
 
 func NewEnvironment(parent *Environment) *Environment {
+	values := make(map[string]Value)
+
+	if parent == nil {
+		initBuiltins(values)
+	}
+
 	return &Environment{
 		parent: parent,
-		values: make(map[string]Value),
+		values: values,
 	}
+}
+
+func initBuiltins(values map[string]Value) {
+	values["clock"] = NewBuiltinFuncValue("clock", clock)
 }
 
 func (env *Environment) Get(name string) (Value, error) {

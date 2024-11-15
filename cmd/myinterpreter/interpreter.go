@@ -310,6 +310,43 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 
 }
 
+func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
+	value, err := interpreter.evalAst(assignment.right)
+	if err != nil {
+		return
+	}
+	defEnv, err := interpreter.env.GetDefiningEnv(assignment.left)
+	if err != nil {
+		return
+	}
+	defEnv.Set(assignment.left, value)
+}
+
+func (interpreter *Interpreter) visitCall(call *Call) {
+	var arguments []Value
+
+	for _, arg := range call.args {
+		argument, err := interpreter.evalAst(arg)
+		if err != nil {
+			return
+		}
+		arguments = append(arguments, argument)
+	}
+
+	value, err := interpreter.env.Get(call.callee)
+	if err != nil {
+		return
+	}
+	callableValue, ok := value.(callable)
+	if !ok {
+		interpreter.lastResult = nil
+		interpreter.lastError = errors.New(fmt.Sprintf("invalid callable %s", call.callee))
+		return
+	}
+
+	interpreter.lastResult, interpreter.lastError = callableValue.call(arguments)
+}
+
 func (interpreter *Interpreter) evalDisjunction(expr *BinaryExpr) (Value, error) {
 	left, err := interpreter.evalAst(expr.Left)
 	if err != nil {
@@ -338,18 +375,6 @@ func (interpreter *Interpreter) evalConjunction(expr *BinaryExpr) (Value, error)
 		return nil, err
 	}
 	return right, nil
-}
-
-func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
-	value, err := interpreter.evalAst(assignment.right)
-	if err != nil {
-		return
-	}
-	defEnv, err := interpreter.env.GetDefiningEnv(assignment.left)
-	if err != nil {
-		return
-	}
-	defEnv.Set(assignment.left, value)
 }
 
 func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {

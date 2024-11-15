@@ -79,3 +79,7 @@ func (ap *AstPrinter) visitAssignment(assignment *Assignment) {
 	assignment.right.accept(ap)
 	fmt.Printf(")")
 }
+
+func (ap *AstPrinter) visitCall(call *Call) {
+	fmt.Printf("(call %s", call.callee)
+}

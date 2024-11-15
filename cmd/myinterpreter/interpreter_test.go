@@ -70,8 +70,17 @@ func TestInterpreter_Run_Block(t *testing.T) {
 			}
 			print bar;
 			print quz;
-		}
-		print quz;`
+		}`
+	interpreter := NewInterpreter(code)
+
+	err, _ := interpreter.Run()
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}
+
+func TestInterpreter_Call_Builtin(t *testing.T) {
+	code := `print clock();`
 	interpreter := NewInterpreter(code)
 
 	err, _ := interpreter.Run()

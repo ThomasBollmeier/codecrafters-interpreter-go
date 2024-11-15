@@ -228,6 +228,22 @@ func (assignment *Assignment) accept(visitor AstVisitor) {
 	visitor.visitAssignment(assignment)
 }
 
+type Call struct {
+	callee string
+	args   []Expr
+}
+
+func NewCall(callee string, args []Expr) *Call {
+	return &Call{
+		callee: callee,
+		args:   args,
+	}
+}
+
+func (call *Call) accept(visitor AstVisitor) {
+	visitor.visitCall(call)
+}
+
 type AstVisitor interface {
 	visitProgram(program *Program)
 	visitBlock(block *Block)
@@ -246,4 +262,5 @@ type AstVisitor interface {
 	visitUnaryExpr(unaryExpr *UnaryExpr)
 	visitBinaryExpr(expr *BinaryExpr)
 	visitAssignment(assignment *Assignment)
+	visitCall(call *Call)
 }

@@ -472,6 +472,9 @@ loop:
 }
 
 func (p *Parser) parseAtomic() (Expr, error) {
+	var err error
+	var nextToken TokenInfo
+
 	token, err := p.advance()
 	if err != nil {
 		return nil, err
@@ -490,13 +493,55 @@ func (p *Parser) parseAtomic() (Expr, error) {
 		value := strings.Trim(token.GetLexeme(), "\"")
 		return NewStringExpr(value), nil
 	case Identifier:
-		return NewIdentifierExpr(token.GetLexeme()), nil
+		nextToken, err = p.peek()
+		if err != nil || nextToken.GetTokenType() != LeftParen {
+			return NewIdentifierExpr(token.GetLexeme()), nil
+		} else {
+			return p.parseCall(token.GetLexeme())
+		}
 	case LeftParen:
 		return p.parseGroup()
 	case Bang, Minus:
 		return p.parseUnary(token)
 	default:
 		return nil, errors.New(fmt.Sprintf("unexpected token: %s", tt))
+	}
+}
+
+func (p *Parser) parseCall(callee string) (Expr, error) {
+	var args []Expr
+	var arg Expr
+	var token TokenInfo
+	var err error
+
+	_, _ = p.consume(LeftParen)
+
+	token, err = p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() == RightParen {
+		_, _ = p.advance()
+		return &Call{callee, args}, nil
+	}
+
+	for {
+		arg, err = p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+
+		token, err = p.peek()
+		if err != nil {
+			return nil, err
+		}
+		if token.GetTokenType() == RightParen {
+			_, _ = p.advance()
+			return &Call{callee, args}, nil
+		} else {
+			_, _ = p.consume(Comma)
+		}
 	}
 }
 
