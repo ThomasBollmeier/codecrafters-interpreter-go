@@ -574,8 +574,8 @@ loop:
 }
 
 func (p *Parser) parseAtomic() (Expr, error) {
+	var expr Expr
 	var err error
-	var nextToken TokenInfo
 
 	token, err := p.advance()
 	if err != nil {
@@ -584,30 +584,36 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	switch tt := token.GetTokenType(); tt {
 	case Number:
 		value, _ := strconv.ParseFloat(token.GetLexeme(), 64)
-		return NewNumberExpr(value), nil
+		expr = NewNumberExpr(value)
 	case True:
-		return NewBooleanExpr(true), nil
+		expr = NewBooleanExpr(true)
 	case False:
-		return NewBooleanExpr(false), nil
+		expr = NewBooleanExpr(false)
 	case Nil:
-		return NewNilExpr(), nil
+		expr = NewNilExpr()
 	case String:
 		value := strings.Trim(token.GetLexeme(), "\"")
-		return NewStringExpr(value), nil
+		expr = NewStringExpr(value)
 	case Identifier:
-		nextToken, err = p.peek()
-		if err != nil || nextToken.GetTokenType() != LeftParen {
-			return NewIdentifierExpr(token.GetLexeme()), nil
-		} else {
-			return p.parseCall(NewIdentifierExpr(token.GetLexeme()))
-		}
+		expr = NewIdentifierExpr(token.GetLexeme())
 	case LeftParen:
-		return p.parseGroup()
+		expr, err = p.parseGroup()
 	case Bang, Minus:
-		return p.parseUnary(token)
+		expr, err = p.parseUnary(token)
 	default:
 		return nil, errors.New(fmt.Sprintf("unexpected token: %s", tt))
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	nextToken, err := p.peek()
+	if err != nil || nextToken.GetTokenType() != LeftParen {
+		return expr, nil
+	}
+
+	return p.parseCall(expr)
 }
 
 func (p *Parser) parseCall(callee Expr) (Expr, error) {
