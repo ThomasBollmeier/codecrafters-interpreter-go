@@ -20,6 +20,8 @@ func (ap *AstPrinter) visitVarDecl(*VarDecl) {}
 
 func (ap *AstPrinter) visitPrint(*PrintStatement) {}
 
+func (ap *AstPrinter) visitReturnStmt(*ReturnStatement) {}
+
 func (ap *AstPrinter) visitExprStmt(*ExpressionStatement) {}
 
 func (ap *AstPrinter) visitIfStmt(*IfStatement) {}

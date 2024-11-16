@@ -52,3 +52,23 @@ func TestParser_ParseForStmt(t *testing.T) {
 
 	ast.accept(NewAstPrinter())
 }
+
+func TestParser_ParseReturn(t *testing.T) {
+	code := `
+		fun fib(n) {
+			if (n < 2) return n;
+			return fib(n - 2) + fib(n - 1);
+		}
+		var start = clock();
+		print fib(10) == 55;
+		print (clock() - start) < 5; // 5 seconds`
+
+	parser := NewParser(code)
+
+	ast, err := parser.ParseProgram()
+	if err != nil {
+		t.Fatalf("parser.ParseExpression() error = %v", err)
+	}
+
+	ast.accept(NewAstPrinter())
+}

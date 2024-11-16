@@ -100,6 +100,8 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 	switch token.GetTokenType() {
 	case Print:
 		stmt, err = p.parsePrintStmt()
+	case Return:
+		stmt, err = p.parseReturnStmt()
 	case If:
 		stmt, err = p.parseIfStmt()
 	case While:
@@ -117,6 +119,33 @@ func (p *Parser) parseStatement(nextToken TokenInfo) (Statement, error) {
 	}
 
 	return stmt, nil
+}
+
+func (p *Parser) parseReturnStmt() (Statement, error) {
+	_, err := p.consume(Return)
+	if err != nil {
+		return nil, err
+	}
+	token, err := p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() == Semicolon {
+		_, _ = p.consume(Semicolon)
+		return NewReturnStatement(nil), nil
+	}
+
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(Semicolon)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewReturnStatement(expr), nil
 }
 
 func (p *Parser) parseForStmt() (Statement, error) {

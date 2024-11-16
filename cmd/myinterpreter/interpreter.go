@@ -6,9 +6,11 @@ import (
 )
 
 type Interpreter struct {
-	lastResult Value
-	lastError  error
-	env        *Environment
+	lastResult       Value
+	lastError        error
+	lambdaEvalActive bool
+	returnOccurred   bool
+	env              *Environment
 }
 
 func NewInterpreter(env *Environment) *Interpreter {
@@ -59,7 +61,7 @@ func (interpreter *Interpreter) visitBlock(block *Block) {
 
 	for _, statement := range block.statements {
 		statement.accept(interpreter)
-		if interpreter.lastError != nil {
+		if interpreter.lastError != nil || interpreter.returnOccurred {
 			break
 		}
 	}
@@ -80,6 +82,22 @@ func (interpreter *Interpreter) visitPrint(printStmt *PrintStatement) {
 	if err == nil {
 		fmt.Println(value)
 	}
+}
+
+func (interpreter *Interpreter) visitReturnStmt(returnStmt *ReturnStatement) {
+	if !interpreter.lambdaEvalActive {
+		interpreter.lastResult = nil
+		interpreter.lastError = errors.New("return is not allowed outside of a function body")
+		return
+	}
+	if returnStmt.expression == nil {
+		interpreter.lastResult = NewNilValue()
+		interpreter.lastError = nil
+	} else {
+		interpreter.lastResult, interpreter.lastError = interpreter.evalAst(returnStmt.expression)
+	}
+
+	interpreter.returnOccurred = true
 }
 
 func (interpreter *Interpreter) visitExprStmt(exprStmt *ExpressionStatement) {

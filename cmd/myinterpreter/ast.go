@@ -57,6 +57,18 @@ func (p *PrintStatement) accept(visitor AstVisitor) {
 	visitor.visitPrint(p)
 }
 
+type ReturnStatement struct {
+	expression AST
+}
+
+func NewReturnStatement(expression AST) *ReturnStatement {
+	return &ReturnStatement{expression: expression}
+}
+
+func (r *ReturnStatement) accept(visitor AstVisitor) {
+	visitor.visitReturnStmt(r)
+}
+
 type ExpressionStatement struct {
 	expression AST
 }
@@ -263,6 +275,7 @@ type AstVisitor interface {
 	visitBlock(block *Block)
 	visitVarDecl(varDecl *VarDecl)
 	visitPrint(printStmt *PrintStatement)
+	visitReturnStmt(returnStmt *ReturnStatement)
 	visitExprStmt(exprStmt *ExpressionStatement)
 	visitIfStmt(ifStmt *IfStatement)
 	visitWhileStmt(whileStmt *WhileStatement)

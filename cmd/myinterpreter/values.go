@@ -213,7 +213,14 @@ func (l *LambdaValue) call(args []Value) (Value, error) {
 	}
 
 	interpreter := NewInterpreter(callEnv)
+
+	interpreter.lambdaEvalActive = true
+	interpreter.returnOccurred = false
+
 	interpreter.visitBlock(&l.body)
+
+	interpreter.lambdaEvalActive = false
+	interpreter.returnOccurred = false
 
 	return interpreter.lastResult, interpreter.lastError
 }
