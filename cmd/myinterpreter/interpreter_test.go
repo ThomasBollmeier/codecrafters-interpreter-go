@@ -101,3 +101,18 @@ func TestInterpreter_FunctionDef(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_WhileWithReturn(t *testing.T) {
+	code := `
+		fun f() {
+			while (!false) return "ok";
+		}
+		print f();`
+
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

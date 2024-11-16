@@ -140,7 +140,7 @@ func (interpreter *Interpreter) visitWhileStmt(whileStmt *WhileStatement) {
 		}
 
 		_, err = interpreter.evalAst(whileStmt.statement)
-		if err != nil {
+		if err != nil || interpreter.returnOccurred {
 			return
 		}
 	}
@@ -172,7 +172,7 @@ func (interpreter *Interpreter) visitForStmt(forStmt *ForStatement) {
 		}
 
 		_, err = interpreter.evalAst(forStmt.statement)
-		if err != nil {
+		if err != nil || interpreter.returnOccurred {
 			return
 		}
 
