@@ -72,3 +72,31 @@ func TestParser_ParseReturn(t *testing.T) {
 
 	ast.accept(NewAstPrinter())
 }
+
+func TestParser_ParseCallAsCallee(t *testing.T) {
+	code := `
+		fun returnArg(arg) {
+			return arg;
+		}
+
+		fun returnFunCallWithArg(func, arg) {
+			return returnArg(func)(arg);
+		}
+
+		fun printArg(arg) {
+			print arg;
+		}
+
+		returnFunCallWithArg(printArg, "quz");
+		`
+
+	parser := NewParser(code)
+
+	ast, err := parser.ParseProgram()
+	if err != nil {
+		t.Fatalf("parser.ParseExpression() error = %v", err)
+	}
+
+	ast.accept(NewAstPrinter())
+
+}

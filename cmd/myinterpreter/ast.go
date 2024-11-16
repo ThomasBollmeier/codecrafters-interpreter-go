@@ -255,11 +255,11 @@ func (assignment *Assignment) accept(visitor AstVisitor) {
 }
 
 type Call struct {
-	callee string
+	callee Expr
 	args   []Expr
 }
 
-func NewCall(callee string, args []Expr) *Call {
+func NewCall(callee Expr, args []Expr) *Call {
 	return &Call{
 		callee: callee,
 		args:   args,

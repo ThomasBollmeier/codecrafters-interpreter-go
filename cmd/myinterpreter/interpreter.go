@@ -363,14 +363,14 @@ func (interpreter *Interpreter) visitCall(call *Call) {
 		arguments = append(arguments, argument)
 	}
 
-	value, err := interpreter.env.Get(call.callee)
+	value, err := interpreter.evalAst(call.callee)
 	if err != nil {
 		return
 	}
 	callableValue, ok := value.(callable)
 	if !ok {
 		interpreter.lastResult = nil
-		interpreter.lastError = errors.New(fmt.Sprintf("invalid callable %s", call.callee))
+		interpreter.lastError = errors.New("invalid callable")
 		return
 	}
 

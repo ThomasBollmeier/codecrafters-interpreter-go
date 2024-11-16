@@ -599,7 +599,7 @@ func (p *Parser) parseAtomic() (Expr, error) {
 		if err != nil || nextToken.GetTokenType() != LeftParen {
 			return NewIdentifierExpr(token.GetLexeme()), nil
 		} else {
-			return p.parseCall(token.GetLexeme())
+			return p.parseCall(NewIdentifierExpr(token.GetLexeme()))
 		}
 	case LeftParen:
 		return p.parseGroup()
@@ -610,7 +610,7 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	}
 }
 
-func (p *Parser) parseCall(callee string) (Expr, error) {
+func (p *Parser) parseCall(callee Expr) (Expr, error) {
 	var args []Expr
 	var arg Expr
 	var token TokenInfo
@@ -640,10 +640,18 @@ func (p *Parser) parseCall(callee string) (Expr, error) {
 		}
 		if token.GetTokenType() == RightParen {
 			_, _ = p.advance()
-			return &Call{callee, args}, nil
+			break
 		} else {
 			_, _ = p.consume(Comma)
 		}
+	}
+
+	token, err = p.peek()
+	if err != nil || token.GetTokenType() != LeftParen {
+		return &Call{callee, args}, nil
+	} else {
+		callee = &Call{callee, args}
+		return p.parseCall(callee)
 	}
 }
 
