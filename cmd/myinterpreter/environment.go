@@ -30,7 +30,11 @@ func initBuiltins(values map[string]Value) {
 func (env *Environment) Get(name string) (Value, error) {
 	value, ok := env.values[name]
 	if ok {
-		return value, nil
+		if value != nil {
+			return value, nil
+		} else {
+			return nil, fmt.Errorf("declaration of variable %s is not yet done", name)
+		}
 	}
 	if env.parent != nil {
 		return env.parent.Get(name)
@@ -65,4 +69,12 @@ func (env *Environment) GetEnvAtLevel(level int) (*Environment, error) {
 
 func (env *Environment) Set(name string, value Value) {
 	env.values[name] = value
+}
+
+func (env *Environment) StartDeclaration(name string) {
+	_, ok := env.values[name]
+	if ok {
+		return
+	}
+	env.values[name] = nil
 }

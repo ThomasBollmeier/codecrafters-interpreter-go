@@ -70,11 +70,12 @@ func (interpreter *Interpreter) visitBlock(block *Block) {
 }
 
 func (interpreter *Interpreter) visitVarDecl(varDecl *VarDecl) {
+	interpreter.env.StartDeclaration(varDecl.name) // start declaration
 	value, err := interpreter.evalAst(varDecl.expression)
 	if err != nil {
 		return
 	}
-	interpreter.env.Set(varDecl.name, value)
+	interpreter.env.Set(varDecl.name, value) // finalize declaration
 }
 
 func (interpreter *Interpreter) visitPrint(printStmt *PrintStatement) {

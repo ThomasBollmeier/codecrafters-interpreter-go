@@ -116,3 +116,46 @@ func TestInterpreter_WhileWithReturn(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_VarDecl(t *testing.T) {
+	code := `
+		var a = "outer";
+		{
+			var a = a;
+		}`
+
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err == nil {
+		t.Fatalf("expected interpreter error did not occur")
+	}
+}
+
+func TestInterpreter_MutualRecursion(t *testing.T) {
+	code := `
+{
+	   var threshold = 50;
+ 
+   fun isEven(n) {
+     if (n == 0) return true;
+     if (n > threshold) return false;
+     return isOdd(n - 1);
+   }
+ 
+   fun isOdd(n) {
+     if (n == 0) return false;
+     if (n > threshold) return false;
+     return isEven(n - 1);
+   }
+ 
+   print isEven(5);
+}`
+
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

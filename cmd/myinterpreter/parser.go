@@ -28,7 +28,11 @@ func (p *Parser) ParseProgram() (AST, error) {
 	}
 
 	ret := NewProgram(statements)
-	ret.accept(NewVariableResolver())
+	resolver := NewVariableResolver()
+	ret.accept(resolver)
+	if resolver.err != nil {
+		return nil, resolver.err
+	}
 	return ret, nil
 }
 
