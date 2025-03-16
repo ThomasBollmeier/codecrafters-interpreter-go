@@ -216,7 +216,17 @@ func (interpreter *Interpreter) visitStringExpr(stringExpr *StringExpr) {
 }
 
 func (interpreter *Interpreter) visitIdentifierExpr(identifierExpr *IdentifierExpr) {
-	interpreter.lastResult, interpreter.lastError = interpreter.env.Get(identifierExpr.name)
+	var env *Environment
+	if identifierExpr.defLevel != -1 {
+		env, interpreter.lastError = interpreter.env.GetEnvAtLevel(identifierExpr.defLevel)
+		if interpreter.lastError != nil {
+			interpreter.lastResult = nil
+			return
+		}
+	} else {
+		env = interpreter.env
+	}
+	interpreter.lastResult, interpreter.lastError = env.Get(identifierExpr.name)
 }
 
 func (interpreter *Interpreter) visitGroupExpr(groupExpr *GroupExpr) {
@@ -345,7 +355,12 @@ func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
 	if err != nil {
 		return
 	}
-	defEnv, err := interpreter.env.GetDefiningEnv(assignment.left)
+	var defEnv *Environment
+	if assignment.defLevel != -1 {
+		defEnv, err = interpreter.env.GetEnvAtLevel(assignment.defLevel)
+	} else {
+		defEnv, err = interpreter.env.GetDefiningEnv(assignment.left)
+	}
 	if err != nil {
 		return
 	}

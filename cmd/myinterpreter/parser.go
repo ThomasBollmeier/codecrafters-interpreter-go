@@ -27,7 +27,9 @@ func (p *Parser) ParseProgram() (AST, error) {
 		return nil, err
 	}
 
-	return NewProgram(statements), nil
+	ret := NewProgram(statements)
+	ret.accept(NewVariableResolver())
+	return ret, nil
 }
 
 func (p *Parser) parseDeclarations() ([]Statement, error) {

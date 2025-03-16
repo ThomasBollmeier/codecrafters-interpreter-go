@@ -1,6 +1,9 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Environment struct {
 	parent *Environment
@@ -46,6 +49,18 @@ func (env *Environment) GetDefiningEnv(name string) (*Environment, error) {
 	} else {
 		return nil, errors.New("unknown identifier " + name)
 	}
+}
+
+func (env *Environment) GetEnvAtLevel(level int) (*Environment, error) {
+	ret := env
+	for level > 0 {
+		if ret.parent == nil {
+			return nil, fmt.Errorf("invalid level %d", level)
+		}
+		ret = ret.parent
+		level--
+	}
+	return ret, nil
 }
 
 func (env *Environment) Set(name string, value Value) {

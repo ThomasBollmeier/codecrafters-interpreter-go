@@ -188,11 +188,12 @@ func (string *StringExpr) accept(visitor AstVisitor) {
 }
 
 type IdentifierExpr struct {
-	name string
+	name     string
+	defLevel int // defined <defLevel> levels above the current scope
 }
 
 func NewIdentifierExpr(name string) *IdentifierExpr {
-	return &IdentifierExpr{name}
+	return &IdentifierExpr{name, -1}
 }
 
 func (identifier *IdentifierExpr) accept(visitor AstVisitor) {
@@ -242,12 +243,13 @@ func (binExpr *BinaryExpr) accept(visitor AstVisitor) {
 }
 
 type Assignment struct {
-	left  string
-	right Expr
+	left     string
+	right    Expr
+	defLevel int // LHS defined <defLevel> levels above the current scope
 }
 
 func NewAssignment(left string, right Expr) *Assignment {
-	return &Assignment{left: left, right: right}
+	return &Assignment{left: left, right: right, defLevel: -1}
 }
 
 func (assignment *Assignment) accept(visitor AstVisitor) {
