@@ -124,6 +124,10 @@ func (v *VariableResolver) visitPrint(printStmt *PrintStatement) {
 }
 
 func (v *VariableResolver) visitReturnStmt(returnStmt *ReturnStatement) {
+	if !v.inFunctionScope() {
+		v.err = fmt.Errorf("return statement is only allowed in function scope")
+		return
+	}
 	if returnStmt.expression != nil {
 		returnStmt.expression.accept(v)
 	}
@@ -247,4 +251,20 @@ func (v *VariableResolver) visitCall(call *Call) {
 			return
 		}
 	}
+}
+
+func (v *VariableResolver) inFunctionScope() bool {
+	ret := false
+	info := v.varInfo
+	for {
+		if info.isParameterInfo {
+			ret = true
+			break
+		}
+		if info.parent == nil {
+			break
+		}
+		info = info.parent
+	}
+	return ret
 }
