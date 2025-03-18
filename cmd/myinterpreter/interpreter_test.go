@@ -159,3 +159,50 @@ func TestInterpreter_MutualRecursion(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_VarDefWithExistingParameter(t *testing.T) {
+	code := `
+		fun foo(a) {
+			var a = "hello";
+		}`
+
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err == nil {
+		t.Fatalf("expected interpreter error did not occur")
+	}
+}
+
+func TestInterpreter_VarDeclWithSelf(t *testing.T) {
+	code := `
+		var a = "hello";
+		var a = a;
+		print a;
+`
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}
+
+func TestInterpreter_OuterVar(t *testing.T) {
+	code := `
+		fun makeCounter() {
+			var i = 0;
+			fun count() {
+				i = i + 1;
+				print i;
+			}
+			return count;
+		}`
+
+	interpreter := NewInterpreter(nil)
+
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

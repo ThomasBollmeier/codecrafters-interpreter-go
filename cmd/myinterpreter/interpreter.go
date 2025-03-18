@@ -152,6 +152,11 @@ func (interpreter *Interpreter) visitWhileStmt(whileStmt *WhileStatement) {
 func (interpreter *Interpreter) visitForStmt(forStmt *ForStatement) {
 	var err error
 
+	interpreter.env = NewEnvironment(interpreter.env)
+	defer func() {
+		interpreter.env = interpreter.env.parent
+	}()
+
 	if forStmt.initializer != nil {
 		_, err = interpreter.evalAst(forStmt.initializer)
 		if err != nil {

@@ -5,14 +5,16 @@ import (
 )
 
 type varInfo struct {
-	parent *varInfo
-	vars   map[string]int
+	parent          *varInfo
+	vars            map[string]int
+	isParameterInfo bool
 }
 
 func newVarInfo(parent *varInfo) *varInfo {
 	return &varInfo{
-		parent: parent,
-		vars:   make(map[string]int),
+		parent:          parent,
+		vars:            make(map[string]int),
+		isParameterInfo: false,
 	}
 }
 
@@ -28,7 +30,7 @@ func (v *varInfo) getLevel(name string) (int, error) {
 	var err error
 	if v.parent != nil {
 		level, err = v.parent.getLevel(name)
-		if err != nil {
+		if err != nil || level == -1 {
 			return -1, err
 		}
 		return level + 1, nil
@@ -36,15 +38,22 @@ func (v *varInfo) getLevel(name string) (int, error) {
 	return -1, nil
 }
 
-func (v *varInfo) addName(name string) {
+func (v *varInfo) addName(name string) error {
+	_, exists := v.vars[name]
+	if exists {
+		return fmt.Errorf("variable %s already defined", name)
+	}
 	v.vars[name] = 1
+	return nil
 }
 
-func (v *varInfo) startVarDecl(name string) {
+func (v *varInfo) startVarDecl(name string) error {
 	_, exists := v.vars[name]
 	if !exists {
 		v.vars[name] = -1
+		return nil
 	}
+	return fmt.Errorf("variable %s already declared", name)
 }
 
 func (v *varInfo) endVarDecl(name string) {
@@ -83,7 +92,29 @@ func (v *VariableResolver) visitBlock(block *Block) {
 }
 
 func (v *VariableResolver) visitVarDecl(varDecl *VarDecl) {
-	v.varInfo.startVarDecl(varDecl.name)
+	err := v.varInfo.startVarDecl(varDecl.name)
+	if err != nil {
+		// Is it a self definition like var a = a; ?
+		idExpr, ok := varDecl.expression.(*IdentifierExpr)
+		isSelfDefinition := ok && idExpr.name == varDecl.name
+
+		// Is it a redeclaration at global scope?
+		isGlobalScope := v.varInfo.parent == nil
+
+		if !isSelfDefinition && !isGlobalScope {
+			v.err = err
+			return
+		}
+	}
+	// Check if a parameter of the same name exists:
+	parameterInfo := v.varInfo.parent
+	if parameterInfo != nil && parameterInfo.isParameterInfo {
+		level, errLevel := parameterInfo.getLevel(varDecl.name)
+		if level == 0 && errLevel == nil {
+			v.err = fmt.Errorf("variable %s is already declared as parameter", varDecl.name)
+			return
+		}
+	}
 	varDecl.expression.accept(v)
 	v.varInfo.endVarDecl(varDecl.name)
 }
@@ -125,6 +156,12 @@ func (v *VariableResolver) visitWhileStmt(whileStmt *WhileStatement) {
 }
 
 func (v *VariableResolver) visitForStmt(f *ForStatement) {
+
+	v.varInfo = newVarInfo(v.varInfo)
+	defer func() {
+		v.varInfo = v.varInfo.parent
+	}()
+
 	if f.initializer != nil {
 		f.initializer.accept(v)
 		if v.err != nil {
@@ -147,10 +184,17 @@ func (v *VariableResolver) visitForStmt(f *ForStatement) {
 }
 
 func (v *VariableResolver) visitFunctionDef(f *FunctionDef) {
-	v.varInfo.addName(f.name)
+	v.err = v.varInfo.addName(f.name)
+	if v.err != nil {
+		return
+	}
 	v.varInfo = newVarInfo(v.varInfo)
+	v.varInfo.isParameterInfo = true
 	for _, param := range f.parameters {
-		v.varInfo.addName(param)
+		v.err = v.varInfo.addName(param)
+		if v.err != nil {
+			return
+		}
 	}
 	f.body.accept(v)
 	v.varInfo = v.varInfo.parent
