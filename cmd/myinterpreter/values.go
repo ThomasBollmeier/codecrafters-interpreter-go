@@ -14,6 +14,7 @@ const (
 	VtString
 	VtBuiltinFunc
 	VtLambda
+	VtClass
 )
 
 type Value interface {
@@ -223,4 +224,33 @@ func (l *LambdaValue) call(args []Value) (Value, error) {
 	interpreter.returnOccurred = false
 
 	return interpreter.lastResult, interpreter.lastError
+}
+
+type ClassValue struct {
+	name    string
+	methods []LambdaValue
+}
+
+func NewClassValue(name string, methods []LambdaValue) *ClassValue {
+	return &ClassValue{name, methods}
+}
+
+func (c *ClassValue) getType() ValueType {
+	return VtClass
+}
+
+func (c *ClassValue) isEqualTo(value Value) bool {
+	cls, ok := value.(*ClassValue)
+	if !ok {
+		return false
+	}
+	return c.name == cls.name
+}
+
+func (c *ClassValue) isTruthy() bool {
+	return true
+}
+
+func (c *ClassValue) String() string {
+	return c.name
 }

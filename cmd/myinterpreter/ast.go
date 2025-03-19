@@ -123,14 +123,32 @@ func (f *ForStatement) accept(visitor AstVisitor) {
 	visitor.visitForStmt(f)
 }
 
+type ClassDef struct {
+	name      string
+	functions []FunctionDef
+}
+
+func NewClassDef(name string) *ClassDef {
+	return &ClassDef{name: name}
+}
+
+func (c *ClassDef) addFunction(function FunctionDef) {
+	c.functions = append(c.functions, function)
+}
+
+func (c *ClassDef) accept(visitor AstVisitor) {
+	visitor.visitClassDef(c)
+}
+
 type FunctionDef struct {
 	name       string
 	parameters []string
 	body       Block
+	class      *ClassDef
 }
 
-func NewFunctionDef(name string, parameters []string, body Block) *FunctionDef {
-	return &FunctionDef{name, parameters, body}
+func NewFunctionDef(class *ClassDef, name string, parameters []string, body Block) *FunctionDef {
+	return &FunctionDef{name, parameters, body, class}
 }
 
 func (f *FunctionDef) accept(visitor AstVisitor) {
@@ -282,6 +300,7 @@ type AstVisitor interface {
 	visitIfStmt(ifStmt *IfStatement)
 	visitWhileStmt(whileStmt *WhileStatement)
 	visitForStmt(f *ForStatement)
+	visitClassDef(c *ClassDef)
 	visitFunctionDef(f *FunctionDef)
 	visitNumberExpr(numberExpr *NumberExpr)
 	visitBooleanExpr(booleanExpr *BooleanExpr)

@@ -194,10 +194,40 @@ func (interpreter *Interpreter) visitForStmt(forStmt *ForStatement) {
 	interpreter.lastError = nil
 }
 
+func (interpreter *Interpreter) visitClassDef(c *ClassDef) {
+	var methods []LambdaValue
+	var method Value
+	var err error
+	interpreter.env = NewEnvironment(interpreter.env)
+
+	for _, function := range c.functions {
+		method, err = interpreter.evalAst(&function)
+		if err != nil {
+			break
+		}
+		methods = append(methods, *method.(*LambdaValue))
+	}
+
+	interpreter.env = interpreter.env.parent
+
+	if err == nil {
+		class := NewClassValue(c.name, methods)
+		interpreter.env.Set(c.name, class)
+		interpreter.lastResult = class
+		interpreter.lastError = nil
+	}
+}
+
 func (interpreter *Interpreter) visitFunctionDef(funDef *FunctionDef) {
-	lambda := NewLambdaValue(funDef.name, funDef.parameters, funDef.body, *interpreter.env)
-	interpreter.env.Set(funDef.name, lambda)
-	interpreter.lastResult = NewNilValue()
+	var name string
+	if funDef.class == nil {
+		name = funDef.name
+	} else {
+		name = funDef.class.name + "::" + funDef.name
+	}
+	lambda := NewLambdaValue(name, funDef.parameters, funDef.body, *interpreter.env)
+	interpreter.env.Set(name, lambda)
+	interpreter.lastResult = lambda
 	interpreter.lastError = nil
 }
 

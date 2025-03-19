@@ -30,6 +30,8 @@ func (ap *AstPrinter) visitWhileStmt(*WhileStatement) {}
 
 func (ap *AstPrinter) visitForStmt(*ForStatement) {}
 
+func (ap *AstPrinter) visitClassDef(*ClassDef) {}
+
 func (ap *AstPrinter) visitFunctionDef(*FunctionDef) {}
 
 func (ap *AstPrinter) visitNumberExpr(num *NumberExpr) {

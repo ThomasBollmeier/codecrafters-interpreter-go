@@ -187,6 +187,23 @@ func (v *VariableResolver) visitForStmt(f *ForStatement) {
 	f.statement.accept(v)
 }
 
+func (v *VariableResolver) visitClassDef(c *ClassDef) {
+	v.err = v.varInfo.addName(c.name)
+	if v.err != nil {
+		return
+	}
+	v.varInfo = newVarInfo(v.varInfo)
+	defer func() {
+		v.varInfo = v.varInfo.parent
+	}()
+	for _, fn := range c.functions {
+		fn.accept(v)
+		if v.err != nil {
+			return
+		}
+	}
+}
+
 func (v *VariableResolver) visitFunctionDef(f *FunctionDef) {
 	v.err = v.varInfo.addName(f.name)
 	if v.err != nil {

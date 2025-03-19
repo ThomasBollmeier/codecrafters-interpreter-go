@@ -80,10 +80,12 @@ func (p *Parser) parseDeclaration(nextToken TokenInfo) (Statement, error) {
 	}
 
 	switch token.GetTokenType() {
+	case Class:
+		return p.parseClassDef()
 	case Var:
 		return p.parseVarDecl()
 	case Fun:
-		return p.parseFunctionDef()
+		return p.parseFunctionDef(true, nil)
 	default:
 		return p.parseStatement(token)
 	}
@@ -302,10 +304,54 @@ func (p *Parser) parseBlock() (AST, error) {
 	return NewBlock(statements), nil
 }
 
-func (p *Parser) parseFunctionDef() (AST, error) {
-	_, err := p.consume(Fun)
+func (p *Parser) parseClassDef() (AST, error) {
+	_, err := p.consume(Class)
 	if err != nil {
 		return nil, err
+	}
+
+	ident, err := p.consume(Identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(LeftBrace)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := NewClassDef(ident.GetLexeme())
+
+	for {
+		nextToken, errPeek := p.peek()
+		if errPeek != nil {
+			return nil, errPeek
+		}
+		if nextToken.GetTokenType() == RightBrace {
+			break
+		}
+
+		function, errFuncDef := p.parseFunctionDef(false, ret)
+		if errFuncDef != nil {
+			return nil, errFuncDef
+		}
+		ret.addFunction(*function.(*FunctionDef))
+	}
+
+	_, err = p.consume(RightBrace)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+func (p *Parser) parseFunctionDef(withFun bool, class *ClassDef) (AST, error) {
+	if withFun {
+		_, err := p.consume(Fun)
+		if err != nil {
+			return nil, err
+		}
 	}
 	ident, err := p.consume(Identifier)
 	if err != nil {
@@ -326,6 +372,7 @@ func (p *Parser) parseFunctionDef() (AST, error) {
 	}
 
 	return NewFunctionDef(
+		class,
 		ident.GetLexeme(),
 		params,
 		*body.(*Block)), nil
