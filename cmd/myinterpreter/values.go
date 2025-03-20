@@ -15,6 +15,7 @@ const (
 	VtBuiltinFunc
 	VtLambda
 	VtClass
+	VtInstance
 )
 
 type Value interface {
@@ -253,4 +254,40 @@ func (c *ClassValue) isTruthy() bool {
 
 func (c *ClassValue) String() string {
 	return c.name
+}
+
+func (c *ClassValue) call([]Value) (Value, error) {
+	return NewInstanceValue(c), nil
+}
+
+type InstanceValue struct {
+	class *ClassValue
+}
+
+func NewInstanceValue(class *ClassValue) *InstanceValue {
+	return &InstanceValue{class}
+}
+
+func (i *InstanceValue) getType() ValueType {
+	return VtInstance
+}
+
+func (i *InstanceValue) isEqualTo(value Value) bool {
+	other, ok := value.(*InstanceValue)
+	if !ok {
+		return false
+	}
+	if !i.class.isEqualTo(other.class) {
+		return false
+	}
+
+	return true
+}
+
+func (i *InstanceValue) isTruthy() bool {
+	return true
+}
+
+func (i *InstanceValue) String() string {
+	return fmt.Sprintf("%s instance", i.class.name)
 }
