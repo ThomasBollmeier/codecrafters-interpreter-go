@@ -261,11 +261,15 @@ func (c *ClassValue) call([]Value) (Value, error) {
 }
 
 type InstanceValue struct {
-	class *ClassValue
+	class      *ClassValue
+	properties map[string]Value
 }
 
 func NewInstanceValue(class *ClassValue) *InstanceValue {
-	return &InstanceValue{class}
+	return &InstanceValue{
+		class:      class,
+		properties: make(map[string]Value),
+	}
 }
 
 func (i *InstanceValue) getType() ValueType {
@@ -290,4 +294,38 @@ func (i *InstanceValue) isTruthy() bool {
 
 func (i *InstanceValue) String() string {
 	return fmt.Sprintf("%s instance", i.class.name)
+}
+
+func (i *InstanceValue) getProperty(path []string) (Value, error) {
+	currInst := i
+	for idx, property := range path {
+		value, ok := currInst.properties[property]
+		if !ok {
+			return nil, fmt.Errorf("property %s not found", property)
+		}
+		if idx == len(path)-1 {
+			return value, nil
+		}
+		currInst, ok = value.(*InstanceValue)
+		if !ok {
+			return nil, fmt.Errorf("expected value to be an instance, found %v", value)
+		}
+	}
+	return nil, fmt.Errorf("property path must not be empty")
+}
+
+func (i *InstanceValue) setProperty(path []string, value Value) error {
+	currInst := i
+	for _, property := range path[:len(path)-1] {
+		val, ok := currInst.properties[property]
+		if !ok {
+			return fmt.Errorf("property %s not found", property)
+		}
+		currInst, ok = val.(*InstanceValue)
+		if !ok {
+			return fmt.Errorf("expected value to be an instance, found %v", value)
+		}
+	}
+	currInst.properties[path[len(path)-1]] = value
+	return nil
 }

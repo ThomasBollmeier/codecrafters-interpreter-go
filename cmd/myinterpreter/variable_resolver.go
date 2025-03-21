@@ -254,7 +254,10 @@ func (v *VariableResolver) visitAssignment(assignment *Assignment) {
 	if v.err != nil {
 		return
 	}
-	assignment.defLevel, v.err = v.varInfo.getLevel(assignment.left)
+	identifier, ok := assignment.left.(*IdentifierExpr)
+	if ok {
+		assignment.defLevel, v.err = v.varInfo.getLevel(identifier.name)
+	}
 }
 
 func (v *VariableResolver) visitCall(call *Call) {
@@ -268,6 +271,10 @@ func (v *VariableResolver) visitCall(call *Call) {
 			return
 		}
 	}
+}
+
+func (v *VariableResolver) visitProperty(property *Property) {
+	property.instance.accept(v)
 }
 
 func (v *VariableResolver) inFunctionScope() bool {

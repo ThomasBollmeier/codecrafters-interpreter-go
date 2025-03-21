@@ -391,16 +391,45 @@ func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
 	if err != nil {
 		return
 	}
-	var defEnv *Environment
-	if assignment.defLevel != -1 {
-		defEnv, err = interpreter.env.GetEnvAtLevel(assignment.defLevel)
-	} else {
-		defEnv, err = interpreter.env.GetDefiningEnv(assignment.left)
+
+	identifier, ok := assignment.left.(*IdentifierExpr)
+	if ok {
+		var defEnv *Environment
+		if assignment.defLevel != -1 {
+			defEnv, err = interpreter.env.GetEnvAtLevel(assignment.defLevel)
+		} else {
+			defEnv, err = interpreter.env.GetDefiningEnv(identifier.name)
+		}
+		if err != nil {
+			return
+		}
+		defEnv.Set(identifier.name, value)
+	} else { // property setter
+		property, okProp := assignment.left.(*Property)
+		if !okProp {
+			interpreter.lastResult = nil
+			interpreter.lastError = errors.New("invalid lhs of assignment")
+			return
+		}
+		valueInst, errInst := interpreter.evalAst(property.instance)
+		if errInst != nil {
+			return
+		}
+		instance, okInst := valueInst.(*InstanceValue)
+		if !okInst {
+			interpreter.lastResult = nil
+			interpreter.lastError = errors.New("expected instance value")
+			return
+		}
+		errSet := instance.setProperty(property.path, value)
+		if errSet != nil {
+			interpreter.lastResult = nil
+			interpreter.lastError = errSet
+			return
+		}
+		interpreter.lastResult = NewNilValue()
+		interpreter.lastError = nil
 	}
-	if err != nil {
-		return
-	}
-	defEnv.Set(assignment.left, value)
 }
 
 func (interpreter *Interpreter) visitCall(call *Call) {
@@ -426,6 +455,20 @@ func (interpreter *Interpreter) visitCall(call *Call) {
 	}
 
 	interpreter.lastResult, interpreter.lastError = callableValue.call(arguments)
+}
+
+func (interpreter *Interpreter) visitProperty(property *Property) {
+	value, err := interpreter.evalAst(property.instance)
+	if err != nil {
+		return
+	}
+	instance, ok := value.(*InstanceValue)
+	if !ok {
+		interpreter.lastResult = nil
+		interpreter.lastError = errors.New("expected an instance value")
+		return
+	}
+	interpreter.lastResult, interpreter.lastError = instance.getProperty(property.path)
 }
 
 func (interpreter *Interpreter) evalDisjunction(expr *BinaryExpr) (Value, error) {

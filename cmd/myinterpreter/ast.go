@@ -261,12 +261,12 @@ func (binExpr *BinaryExpr) accept(visitor AstVisitor) {
 }
 
 type Assignment struct {
-	left     string
+	left     Expr
 	right    Expr
 	defLevel int // LHS defined <defLevel> levels above the current scope
 }
 
-func NewAssignment(left string, right Expr) *Assignment {
+func NewAssignment(left Expr, right Expr) *Assignment {
 	return &Assignment{left: left, right: right, defLevel: -1}
 }
 
@@ -288,6 +288,19 @@ func NewCall(callee Expr, args []Expr) *Call {
 
 func (call *Call) accept(visitor AstVisitor) {
 	visitor.visitCall(call)
+}
+
+type Property struct {
+	instance Expr
+	path     []string
+}
+
+func NewProperty(instance Expr, path []string) *Property {
+	return &Property{instance, path}
+}
+
+func (property *Property) accept(visitor AstVisitor) {
+	visitor.visitProperty(property)
 }
 
 type AstVisitor interface {
@@ -312,4 +325,5 @@ type AstVisitor interface {
 	visitBinaryExpr(expr *BinaryExpr)
 	visitAssignment(assignment *Assignment)
 	visitCall(call *Call)
+	visitProperty(property *Property)
 }

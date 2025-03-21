@@ -501,24 +501,60 @@ func (p *Parser) ParseExpression() (AST, error) {
 }
 
 func (p *Parser) parseExpr() (Expr, error) {
-	nextTokens := p.peekNTokens(2)
-	if len(nextTokens) == 2 {
-		if nextTokens[0].GetTokenType() == Identifier && nextTokens[1].GetTokenType() == Equal {
-			// Assignment:
-			_, _ = p.advance()
-			_, _ = p.advance()
-			ident := nextTokens[0].GetLexeme()
-			rhs, err := p.parseExpr()
-			if err != nil {
-				return nil, err
+	expr, err := p.parseDisjunction()
+	if err != nil {
+		return nil, err
+	}
+	nextToken, err := p.peek()
+	if err != nil || nextToken.GetTokenType() != Equal {
+		return expr, nil
+	}
+
+	var ok bool
+
+	ok = false
+	for {
+		_, ok = expr.(*IdentifierExpr)
+		if ok {
+			break
+		}
+		_, ok = expr.(*Property)
+		break
+	}
+
+	if !ok {
+		return nil, errors.New("left hand side of an assignment must be an identifier or a property")
+	}
+
+	_, _ = p.consume(Equal)
+
+	rhs, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewAssignment(expr, rhs), nil
+
+	/*
+		nextTokens := p.peekNTokens(2)
+		if len(nextTokens) == 2 {
+			if nextTokens[0].GetTokenType() == Identifier && nextTokens[1].GetTokenType() == Equal {
+				// Assignment:
+				_, _ = p.advance()
+				_, _ = p.advance()
+				ident := nextTokens[0].GetLexeme()
+				rhs, err := p.parseExpr()
+				if err != nil {
+					return nil, err
+				}
+				return NewAssignment(ident, rhs), nil
+			} else {
+				return p.parseDisjunction()
 			}
-			return NewAssignment(ident, rhs), nil
 		} else {
 			return p.parseDisjunction()
 		}
-	} else {
-		return p.parseDisjunction()
-	}
+	*/
 }
 
 func (p *Parser) parseDisjunction() (Expr, error) {
@@ -662,11 +698,45 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	}
 
 	nextToken, err := p.peek()
-	if err != nil || nextToken.GetTokenType() != LeftParen {
+	if err != nil {
 		return expr, nil
 	}
 
-	return p.parseCall(expr)
+	switch nextToken.GetTokenType() {
+	case LeftParen:
+		return p.parseCall(expr)
+	case Dot:
+		return p.parseProperty(expr)
+	default:
+		return expr, nil
+	}
+}
+
+func (p *Parser) parseProperty(instance Expr) (Expr, error) {
+	var path []string
+
+	_, err := p.consume(Dot)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		ident, identErr := p.consume(Identifier)
+		if identErr != nil {
+			return nil, identErr
+		}
+		path = append(path, ident.GetLexeme())
+		nextToken, nextErr := p.peek()
+		if nextErr != nil {
+			break
+		}
+		if nextToken.GetTokenType() != Dot {
+			break
+		}
+		_, _ = p.consume(Dot)
+	}
+
+	return NewProperty(instance, path), nil
 }
 
 func (p *Parser) parseCall(callee Expr) (Expr, error) {

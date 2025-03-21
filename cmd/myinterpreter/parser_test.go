@@ -115,3 +115,22 @@ func TestParser_ParseClassDef(t *testing.T) {
 
 	ast.accept(NewAstPrinter())
 }
+
+func TestParser_ParseProperty(t *testing.T) {
+	code := `class Foo {
+		bar() {
+			print "bar";
+		}
+	}
+	var foo = Foo();
+	foo.name = "Test";
+	print foo.name;`
+
+	parser := NewParser(code)
+	ast, err := parser.ParseProgram()
+	if err != nil {
+		t.Fatalf("parser.ParseExpression() error = %v", err)
+	}
+
+	ast.accept(NewAstPrinter())
+}
