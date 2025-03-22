@@ -268,3 +268,22 @@ func TestInterpreter_HigherOrderFunctions(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_Constructor(t *testing.T) {
+	code := `
+		class Person {
+			init(name, firstName) {
+				this.name = name;
+				this.firstName = firstName;
+			}
+		}
+		var ego = Person("", "");
+		print ego.init("Bollmeier", "Thomas").name;
+	`
+
+	interpreter := NewInterpreter(nil)
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

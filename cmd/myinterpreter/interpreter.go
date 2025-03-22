@@ -220,12 +220,15 @@ func (interpreter *Interpreter) visitClassDef(c *ClassDef) {
 
 func (interpreter *Interpreter) visitFunctionDef(funDef *FunctionDef) {
 	var name string
+	isConstructor := false
 	if funDef.class == nil {
 		name = funDef.name
 	} else {
 		name = funDef.class.name + "::" + funDef.name
+		isConstructor = funDef.name == "init"
 	}
 	lambda := NewLambdaValue(name, funDef.parameters, funDef.body, *interpreter.env)
+	lambda.isConstructor = isConstructor
 	interpreter.env.Set(name, lambda)
 	interpreter.lastResult = lambda
 	interpreter.lastError = nil

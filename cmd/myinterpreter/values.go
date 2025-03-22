@@ -179,24 +179,31 @@ func (b *BuiltinFuncValue) call(args []Value) (Value, error) {
 }
 
 type LambdaValue struct {
-	name       string
-	parameters []string
-	body       Block
-	env        Environment
+	name          string
+	isConstructor bool
+	parameters    []string
+	body          Block
+	env           Environment
 }
 
 func NewLambdaValue(name string, parameters []string, body Block, env Environment) *LambdaValue {
-	return &LambdaValue{name, parameters, body, env}
+	return &LambdaValue{
+		name:       name,
+		parameters: parameters,
+		body:       body,
+		env:        env,
+	}
 }
 
 func (l *LambdaValue) bind(instance *InstanceValue) *LambdaValue {
 	boundEnv := NewEnvironment(&l.env)
 	boundEnv.Set("this", instance)
 	return &LambdaValue{
-		name:       l.name,
-		parameters: l.parameters,
-		body:       l.body,
-		env:        *boundEnv,
+		name:          l.name,
+		isConstructor: l.isConstructor,
+		parameters:    l.parameters,
+		body:          l.body,
+		env:           *boundEnv,
 	}
 }
 
@@ -236,6 +243,10 @@ func (l *LambdaValue) call(args []Value) (Value, error) {
 	interpreter.lambdaEvalActive = false
 	interpreter.returnOccurred = false
 
+	if interpreter.lastError == nil && l.isConstructor {
+		interpreter.lastResult, interpreter.lastError = l.env.Get("this")
+	}
+
 	return interpreter.lastResult, interpreter.lastError
 }
 
@@ -268,8 +279,16 @@ func (c *ClassValue) String() string {
 	return c.name
 }
 
-func (c *ClassValue) call([]Value) (Value, error) {
-	return NewInstanceValue(c), nil
+func (c *ClassValue) call(args []Value) (Value, error) {
+	ret := NewInstanceValue(c)
+	initMethod, err := c.getMethod("init")
+	if err == nil {
+		_, errConstructor := initMethod.bind(ret).call(args)
+		if errConstructor != nil {
+			return nil, errConstructor
+		}
+	}
+	return ret, nil
 }
 
 func (c *ClassValue) getMethod(name string) (*LambdaValue, error) {
