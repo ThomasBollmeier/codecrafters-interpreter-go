@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -260,6 +261,16 @@ func (c *ClassValue) call([]Value) (Value, error) {
 	return NewInstanceValue(c), nil
 }
 
+func (c *ClassValue) getMethod(name string) (*LambdaValue, error) {
+	search := c.name + "::" + name
+	for _, method := range c.methods {
+		if method.name == search {
+			return &method, nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf("no method with name %s found", name))
+}
+
 type InstanceValue struct {
 	class      *ClassValue
 	properties map[string]Value
@@ -296,36 +307,31 @@ func (i *InstanceValue) String() string {
 	return fmt.Sprintf("%s instance", i.class.name)
 }
 
-func (i *InstanceValue) getProperty(path []string) (Value, error) {
-	currInst := i
-	for idx, property := range path {
-		value, ok := currInst.properties[property]
-		if !ok {
-			return nil, fmt.Errorf("property %s not found", property)
-		}
-		if idx == len(path)-1 {
-			return value, nil
-		}
-		currInst, ok = value.(*InstanceValue)
-		if !ok {
-			return nil, fmt.Errorf("expected value to be an instance, found %v", value)
-		}
+func (i *InstanceValue) getMember(name string) (Value, error) {
+	property, errProp := i.getProperty(name)
+	if errProp == nil {
+		return property, nil
 	}
-	return nil, fmt.Errorf("property path must not be empty")
+	method, errMethod := i.getMethod(name)
+	if errMethod == nil {
+		return method, nil
+	}
+	return nil, fmt.Errorf("no member with name '%s' found", name)
 }
 
-func (i *InstanceValue) setProperty(path []string, value Value) error {
-	currInst := i
-	for _, property := range path[:len(path)-1] {
-		val, ok := currInst.properties[property]
-		if !ok {
-			return fmt.Errorf("property %s not found", property)
-		}
-		currInst, ok = val.(*InstanceValue)
-		if !ok {
-			return fmt.Errorf("expected value to be an instance, found %v", value)
-		}
+func (i *InstanceValue) getProperty(name string) (Value, error) {
+	value, ok := i.properties[name]
+	if !ok {
+		return nil, fmt.Errorf("property %s not found", name)
 	}
-	currInst.properties[path[len(path)-1]] = value
+	return value, nil
+}
+
+func (i *InstanceValue) setProperty(name string, value Value) error {
+	i.properties[name] = value
 	return nil
+}
+
+func (i *InstanceValue) getMethod(name string) (*LambdaValue, error) {
+	return i.class.getMethod(name)
 }

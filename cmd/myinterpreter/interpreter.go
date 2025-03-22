@@ -323,6 +323,9 @@ func (interpreter *Interpreter) visitBinaryExpr(expr *BinaryExpr) {
 	case "or":
 		interpreter.lastResult, interpreter.lastError = interpreter.evalDisjunction(expr)
 		return
+	case ".":
+		interpreter.lastResult, interpreter.lastError = interpreter.evalPathExpr(expr)
+		return
 	}
 
 	interpreter.lastResult = nil
@@ -392,8 +395,8 @@ func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
 		return
 	}
 
-	identifier, ok := assignment.left.(*IdentifierExpr)
-	if ok {
+	identifier, isIdent := assignment.left.(*IdentifierExpr)
+	if isIdent {
 		var defEnv *Environment
 		if assignment.defLevel != -1 {
 			defEnv, err = interpreter.env.GetEnvAtLevel(assignment.defLevel)
@@ -404,45 +407,28 @@ func (interpreter *Interpreter) visitAssignment(assignment *Assignment) {
 			return
 		}
 		defEnv.Set(identifier.name, value)
-	} else { // property setter
-		property, okProp := assignment.left.(*Property)
-		if !okProp {
-			interpreter.lastResult = nil
-			interpreter.lastError = errors.New("invalid lhs of assignment")
-			return
-		}
-		valueInst, errInst := interpreter.evalAst(property.instance)
-		if errInst != nil {
-			return
-		}
-		instance, okInst := valueInst.(*InstanceValue)
-		if !okInst {
-			interpreter.lastResult = nil
-			interpreter.lastError = errors.New("expected instance value")
-			return
-		}
-		errSet := instance.setProperty(property.path, value)
-		if errSet != nil {
-			interpreter.lastResult = nil
-			interpreter.lastError = errSet
-			return
-		}
-		interpreter.lastResult = NewNilValue()
-		interpreter.lastError = nil
+		return
 	}
+
+	pathExpr := assignment.left.(*BinaryExpr)
+	instance, property, err := interpreter.evalPathExprLhs(pathExpr)
+	if err != nil {
+		interpreter.lastResult = nil
+		interpreter.lastError = err
+		return
+	}
+	err = instance.setProperty(property, value)
+	if err != nil {
+		interpreter.lastResult = nil
+		interpreter.lastError = err
+		return
+	}
+
+	interpreter.lastResult = NewNilValue()
+	interpreter.lastError = nil
 }
 
 func (interpreter *Interpreter) visitCall(call *Call) {
-	var arguments []Value
-
-	for _, arg := range call.args {
-		argument, err := interpreter.evalAst(arg)
-		if err != nil {
-			return
-		}
-		arguments = append(arguments, argument)
-	}
-
 	value, err := interpreter.evalAst(call.callee)
 	if err != nil {
 		return
@@ -454,21 +440,25 @@ func (interpreter *Interpreter) visitCall(call *Call) {
 		return
 	}
 
-	interpreter.lastResult, interpreter.lastError = callableValue.call(arguments)
-}
-
-func (interpreter *Interpreter) visitProperty(property *Property) {
-	value, err := interpreter.evalAst(property.instance)
+	arguments, err := interpreter.evalArguments(call.args)
 	if err != nil {
 		return
 	}
-	instance, ok := value.(*InstanceValue)
-	if !ok {
-		interpreter.lastResult = nil
-		interpreter.lastError = errors.New("expected an instance value")
-		return
+
+	interpreter.lastResult, interpreter.lastError = callableValue.call(arguments)
+}
+
+func (interpreter *Interpreter) evalArguments(args []Expr) ([]Value, error) {
+	var arguments []Value
+
+	for _, arg := range args {
+		argument, err := interpreter.evalAst(arg)
+		if err != nil {
+			return nil, err
+		}
+		arguments = append(arguments, argument)
 	}
-	interpreter.lastResult, interpreter.lastError = instance.getProperty(property.path)
+	return arguments, nil
 }
 
 func (interpreter *Interpreter) evalDisjunction(expr *BinaryExpr) (Value, error) {
@@ -499,6 +489,91 @@ func (interpreter *Interpreter) evalConjunction(expr *BinaryExpr) (Value, error)
 		return nil, err
 	}
 	return right, nil
+}
+
+func (interpreter *Interpreter) evalPathExprLhs(expr *BinaryExpr) (*InstanceValue, string, error) {
+	value, err := interpreter.evalAst(expr.Left)
+	if err != nil {
+		return nil, "", err
+	}
+	instance, isInstance := value.(*InstanceValue)
+	if !isInstance {
+		return nil, "", fmt.Errorf("expected instance but got %T", value)
+	}
+	return interpreter.evalPathLhs(instance, expr.Right)
+}
+
+func (interpreter *Interpreter) evalPathLhs(instance *InstanceValue, expr Expr) (*InstanceValue, string, error) {
+	ident, isIdent := expr.(*IdentifierExpr)
+	if isIdent {
+		return instance, ident.name, nil
+	}
+
+	binExpr, isBinExpr := expr.(*BinaryExpr)
+	if isBinExpr {
+		next, err := interpreter.evalPath(instance, binExpr.Left)
+		if err != nil {
+			return nil, "", err
+		}
+		nextInstance, isInstance := next.(*InstanceValue)
+		if !isInstance {
+			return nil, "", errors.New("expected expression to evaluate to an instance")
+		}
+		return interpreter.evalPathLhs(nextInstance, binExpr.Right)
+	}
+
+	return nil, "", errors.New("invalid expression as lhs")
+}
+
+func (interpreter *Interpreter) evalPathExpr(expr *BinaryExpr) (Value, error) {
+	value, err := interpreter.evalAst(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+	instance, isInstance := value.(*InstanceValue)
+	if !isInstance {
+		return nil, fmt.Errorf("expected instance but got %T", value)
+	}
+	return interpreter.evalPath(instance, expr.Right)
+}
+
+func (interpreter *Interpreter) evalPath(instance *InstanceValue, expr Expr) (Value, error) {
+	ident, isIdent := expr.(*IdentifierExpr)
+	if isIdent {
+		return instance.getMember(ident.name)
+	}
+
+	call, isCall := expr.(*Call)
+	if isCall {
+		methodName, okMethod := call.callee.(*IdentifierExpr)
+		if !okMethod {
+			return nil, errors.New(fmt.Sprintf("expected method name but got %T", call.callee))
+		}
+		method, errMethod := instance.getMethod(methodName.name)
+		if errMethod != nil {
+			return nil, errMethod
+		}
+		arguments, errArgs := interpreter.evalArguments(call.args)
+		if errArgs != nil {
+			return nil, errArgs
+		}
+		return method.call(arguments)
+	}
+
+	binExpr, isBinExpr := expr.(*BinaryExpr)
+	if isBinExpr {
+		next, err := interpreter.evalPath(instance, binExpr.Left)
+		if err != nil {
+			return nil, err
+		}
+		nextInstance, isInstance := next.(*InstanceValue)
+		if !isInstance {
+			return nil, errors.New("expected expression to evaluate to an instance")
+		}
+		return interpreter.evalPath(nextInstance, binExpr.Right)
+	}
+
+	return nil, errors.New("invalid path segment")
 }
 
 func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {

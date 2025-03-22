@@ -273,10 +273,6 @@ func (v *VariableResolver) visitCall(call *Call) {
 	}
 }
 
-func (v *VariableResolver) visitProperty(property *Property) {
-	property.instance.accept(v)
-}
-
 func (v *VariableResolver) inFunctionScope() bool {
 	ret := false
 	info := v.varInfo

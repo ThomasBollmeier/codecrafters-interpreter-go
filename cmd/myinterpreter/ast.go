@@ -290,19 +290,6 @@ func (call *Call) accept(visitor AstVisitor) {
 	visitor.visitCall(call)
 }
 
-type Property struct {
-	instance Expr
-	path     []string
-}
-
-func NewProperty(instance Expr, path []string) *Property {
-	return &Property{instance, path}
-}
-
-func (property *Property) accept(visitor AstVisitor) {
-	visitor.visitProperty(property)
-}
-
 type AstVisitor interface {
 	visitProgram(program *Program)
 	visitBlock(block *Block)
@@ -325,5 +312,4 @@ type AstVisitor interface {
 	visitBinaryExpr(expr *BinaryExpr)
 	visitAssignment(assignment *Assignment)
 	visitCall(call *Call)
-	visitProperty(property *Property)
 }

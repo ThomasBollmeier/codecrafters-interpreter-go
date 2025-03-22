@@ -89,6 +89,3 @@ func (ap *AstPrinter) visitAssignment(assignment *Assignment) {
 func (ap *AstPrinter) visitCall(call *Call) {
 	fmt.Printf("(call %s", call.callee)
 }
-
-func (ap *AstPrinter) visitProperty(*Property) {
-}

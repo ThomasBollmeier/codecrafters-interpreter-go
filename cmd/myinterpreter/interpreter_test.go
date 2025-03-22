@@ -206,3 +206,38 @@ func TestInterpreter_OuterVar(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_CallMethod(t *testing.T) {
+	code := `
+		class Foo {
+			bar() {
+				print "wunderbar!";
+			}
+		}
+		var foo = Foo();
+		foo.bar();`
+
+	interpreter := NewInterpreter(nil)
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}
+
+func TestInterpreter_SetProperty(t *testing.T) {
+	code := `
+		class Foo {
+			bar(self) {
+				print self.comment;
+			}
+		}
+		var foo = Foo();
+		foo.comment = "wunderbar!";
+		foo.bar(foo);`
+
+	interpreter := NewInterpreter(nil)
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}
