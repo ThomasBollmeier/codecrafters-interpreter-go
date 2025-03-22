@@ -62,9 +62,10 @@ func (v *varInfo) endVarDecl(name string) {
 }
 
 type VariableResolver struct {
-	varInfo      *varInfo
-	err          error
-	withinMethod bool
+	varInfo           *varInfo
+	err               error
+	withinMethod      bool
+	withinConstructor bool
 }
 
 func NewVariableResolver() *VariableResolver {
@@ -131,7 +132,11 @@ func (v *VariableResolver) visitReturnStmt(returnStmt *ReturnStatement) {
 		return
 	}
 	if returnStmt.expression != nil {
-		returnStmt.expression.accept(v)
+		if !v.withinConstructor {
+			returnStmt.expression.accept(v)
+		} else {
+			v.err = fmt.Errorf("return statement in constructor must not return a value")
+		}
 	}
 }
 
@@ -200,8 +205,10 @@ func (v *VariableResolver) visitClassDef(c *ClassDef) {
 	}()
 	for _, fn := range c.functions {
 		v.withinMethod = true
+		v.withinConstructor = fn.name == "init"
 		fn.accept(v)
 		v.withinMethod = false
+		v.withinConstructor = false
 		if v.err != nil {
 			return
 		}
