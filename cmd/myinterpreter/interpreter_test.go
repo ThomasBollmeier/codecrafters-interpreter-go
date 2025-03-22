@@ -241,3 +241,30 @@ func TestInterpreter_SetProperty(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_HigherOrderFunctions(t *testing.T) {
+	code := `
+		class Wizard {
+			getSpellCaster() {
+				fun castSpell() {
+        			print this;
+        			print "Casting spell as " + this.name;
+     			}
+ 
+    			// Functions are first-class objects in Lox
+     			return castSpell;
+   			}
+ 		}
+ 
+		var wizard = Wizard();
+		wizard.name = "Merlin";
+ 
+		// Calling an instance method that returns a<|SPACE|>// function should work
+		wizard.getSpellCaster()();`
+
+	interpreter := NewInterpreter(nil)
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

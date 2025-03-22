@@ -545,14 +545,11 @@ func (interpreter *Interpreter) evalPath(instance *InstanceValue, expr Expr) (Va
 
 	call, isCall := expr.(*Call)
 	if isCall {
-		methodName, okMethod := call.callee.(*IdentifierExpr)
-		if !okMethod {
-			return nil, errors.New(fmt.Sprintf("expected method name but got %T", call.callee))
-		}
-		method, errMethod := instance.getMethod(methodName.name)
+		method, errMethod := interpreter.evalMethod(instance, call.callee)
 		if errMethod != nil {
 			return nil, errMethod
 		}
+
 		arguments, errArgs := interpreter.evalArguments(call.args)
 		if errArgs != nil {
 			return nil, errArgs
@@ -574,6 +571,44 @@ func (interpreter *Interpreter) evalPath(instance *InstanceValue, expr Expr) (Va
 	}
 
 	return nil, errors.New("invalid path segment")
+}
+
+func (interpreter *Interpreter) evalMethod(instance *InstanceValue, callee Expr) (callable, error) {
+	ident, isIdent := callee.(*IdentifierExpr)
+	if isIdent {
+		member, errMember := instance.getMember(ident.name)
+		if errMember != nil {
+			return nil, errMember
+		}
+		method, isMethod := member.(callable)
+		if !isMethod {
+			return nil, errors.New(fmt.Sprintf("expected callable method but got %T", member))
+		}
+		return method, nil
+	}
+
+	call, isCall := callee.(*Call)
+	if isCall {
+		calleeValue, errCallee := interpreter.evalMethod(instance, call.callee)
+		if errCallee != nil {
+			return nil, errCallee
+		}
+		arguments, errArgs := interpreter.evalArguments(call.args)
+		if errArgs != nil {
+			return nil, errArgs
+		}
+		value, errCall := calleeValue.call(arguments)
+		if errCall != nil {
+			return nil, errCall
+		}
+		method, isMethod := value.(callable)
+		if !isMethod {
+			return nil, errors.New(fmt.Sprintf("expected callable method but got %T", value))
+		}
+		return method, nil
+	}
+
+	return nil, fmt.Errorf("invalid callee type: %T", callee)
 }
 
 func (interpreter *Interpreter) evalAst(ast AST) (Value, error) {

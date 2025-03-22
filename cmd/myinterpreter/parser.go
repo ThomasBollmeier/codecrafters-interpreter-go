@@ -673,7 +673,7 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	case String:
 		value := strings.Trim(token.GetLexeme(), "\"")
 		expr = NewStringExpr(value)
-	case Identifier:
+	case Identifier, This:
 		expr = NewIdentifierExpr(token.GetLexeme())
 	case LeftParen:
 		expr, err = p.parseGroup()
@@ -713,25 +713,24 @@ func (p *Parser) parseCall(callee Expr) (Expr, error) {
 	}
 	if token.GetTokenType() == RightParen {
 		_, _ = p.advance()
-		return &Call{callee, args}, nil
-	}
+	} else {
+		for {
+			arg, err = p.parseExpr()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
 
-	for {
-		arg, err = p.parseExpr()
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, arg)
-
-		token, err = p.peek()
-		if err != nil {
-			return nil, err
-		}
-		if token.GetTokenType() == RightParen {
-			_, _ = p.advance()
-			break
-		} else {
-			_, _ = p.consume(Comma)
+			token, err = p.peek()
+			if err != nil {
+				return nil, err
+			}
+			if token.GetTokenType() == RightParen {
+				_, _ = p.advance()
+				break
+			} else {
+				_, _ = p.consume(Comma)
+			}
 		}
 	}
 

@@ -189,6 +189,17 @@ func NewLambdaValue(name string, parameters []string, body Block, env Environmen
 	return &LambdaValue{name, parameters, body, env}
 }
 
+func (l *LambdaValue) bind(instance *InstanceValue) *LambdaValue {
+	boundEnv := NewEnvironment(&l.env)
+	boundEnv.Set("this", instance)
+	return &LambdaValue{
+		name:       l.name,
+		parameters: l.parameters,
+		body:       l.body,
+		env:        *boundEnv,
+	}
+}
+
 func (l *LambdaValue) getType() ValueType {
 	return VtLambda
 }
@@ -333,5 +344,9 @@ func (i *InstanceValue) setProperty(name string, value Value) error {
 }
 
 func (i *InstanceValue) getMethod(name string) (*LambdaValue, error) {
-	return i.class.getMethod(name)
+	method, err := i.class.getMethod(name)
+	if err != nil {
+		return nil, err
+	}
+	return method.bind(i), nil
 }
