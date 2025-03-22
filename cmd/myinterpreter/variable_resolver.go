@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -61,8 +62,9 @@ func (v *varInfo) endVarDecl(name string) {
 }
 
 type VariableResolver struct {
-	varInfo *varInfo
-	err     error
+	varInfo      *varInfo
+	err          error
+	withinMethod bool
 }
 
 func NewVariableResolver() *VariableResolver {
@@ -197,7 +199,9 @@ func (v *VariableResolver) visitClassDef(c *ClassDef) {
 		v.varInfo = v.varInfo.parent
 	}()
 	for _, fn := range c.functions {
+		v.withinMethod = true
 		fn.accept(v)
+		v.withinMethod = false
 		if v.err != nil {
 			return
 		}
@@ -230,6 +234,10 @@ func (v *VariableResolver) visitNilExpr() {}
 func (v *VariableResolver) visitStringExpr(*StringExpr) {}
 
 func (v *VariableResolver) visitIdentifierExpr(identifierExpr *IdentifierExpr) {
+	if identifierExpr.name == "this" && !v.withinMethod {
+		v.err = errors.New("'this' cannot be used outside of a method")
+		return
+	}
 	identifierExpr.defLevel, v.err = v.varInfo.getLevel(identifierExpr.name)
 }
 
