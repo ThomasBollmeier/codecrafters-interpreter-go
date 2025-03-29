@@ -195,6 +195,13 @@ func (v *VariableResolver) visitForStmt(f *ForStatement) {
 }
 
 func (v *VariableResolver) visitClassDef(c *ClassDef) {
+	if c.superClass != "" {
+		level, err := v.varInfo.getLevel(c.superClass)
+		if level == -1 || err != nil {
+			v.err = fmt.Errorf("super class '%s' is unknown", c.superClass)
+			return
+		}
+	}
 	v.err = v.varInfo.addName(c.name)
 	if v.err != nil {
 		return

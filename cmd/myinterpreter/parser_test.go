@@ -132,6 +132,16 @@ func TestParser_ParseClassDefWithSuperClass(t *testing.T) {
 	ast.accept(NewAstPrinter())
 }
 
+func TestParser_ParseClassDefWithSuperClassError(t *testing.T) {
+	code := `class Foo < Foo { }`
+
+	parser := NewParser(code)
+	_, err := parser.ParseProgram()
+	if err == nil {
+		t.Fatalf("expected error was not thrown")
+	}
+}
+
 func TestParser_ParseProperty(t *testing.T) {
 	code := `class Foo {
 		bar() {
