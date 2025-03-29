@@ -117,11 +117,14 @@ func TestParser_ParseClassDef(t *testing.T) {
 }
 
 func TestParser_ParseClassDefWithSuperClass(t *testing.T) {
-	code := `class Foo < Bar {
+	code := `
+	class Bar {
 		bar() {
 			print "bar";
 		}
-	}`
+	}
+	class Foo < Bar {}
+	var foo = Foo();`
 
 	parser := NewParser(code)
 	ast, err := parser.ParseProgram()

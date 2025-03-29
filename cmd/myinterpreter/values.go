@@ -195,9 +195,12 @@ func NewLambdaValue(name string, parameters []string, body Block, env Environmen
 	}
 }
 
-func (l *LambdaValue) bind(instance *InstanceValue) *LambdaValue {
+func (l *LambdaValue) bind(instance *InstanceValue, class *ClassValue) *LambdaValue {
 	boundEnv := NewEnvironment(&l.env)
 	boundEnv.Set("this", instance)
+	if class.super != nil {
+		boundEnv.Set("super", instance.super(class.super))
+	}
 	return &LambdaValue{
 		name:          l.name,
 		isConstructor: l.isConstructor,
@@ -286,9 +289,9 @@ func (c *ClassValue) String() string {
 
 func (c *ClassValue) call(args []Value) (Value, error) {
 	ret := NewInstanceValue(c)
-	initMethod, err := c.getMethod("init")
+	initMethod, err := ret.getMethod("init")
 	if err == nil {
-		_, errConstructor := initMethod.bind(ret).call(args)
+		_, errConstructor := initMethod.call(args)
 		if errConstructor != nil {
 			return nil, errConstructor
 		}
@@ -303,9 +306,6 @@ func (c *ClassValue) getMethod(name string) (*LambdaValue, error) {
 			return &method, nil
 		}
 	}
-	if c.super != nil {
-		return c.super.getMethod(name)
-	}
 	return nil, errors.New(fmt.Sprintf("no method with name %s found", name))
 }
 
@@ -318,6 +318,13 @@ func NewInstanceValue(class *ClassValue) *InstanceValue {
 	return &InstanceValue{
 		class:      class,
 		properties: make(map[string]Value),
+	}
+}
+
+func (i *InstanceValue) super(super *ClassValue) *InstanceValue {
+	return &InstanceValue{
+		class:      super,
+		properties: i.properties,
 	}
 }
 
@@ -371,9 +378,15 @@ func (i *InstanceValue) setProperty(name string, value Value) error {
 }
 
 func (i *InstanceValue) getMethod(name string) (*LambdaValue, error) {
-	method, err := i.class.getMethod(name)
-	if err != nil {
-		return nil, err
+	class := i.class
+	for {
+		method, err := class.getMethod(name)
+		if err == nil {
+			return method.bind(i, class), nil
+		}
+		if class.super == nil {
+			return nil, err
+		}
+		class = class.super
 	}
-	return method.bind(i), nil
 }

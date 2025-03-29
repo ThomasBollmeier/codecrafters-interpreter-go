@@ -687,7 +687,7 @@ func (p *Parser) parseAtomic() (Expr, error) {
 	case String:
 		value := strings.Trim(token.GetLexeme(), "\"")
 		expr = NewStringExpr(value)
-	case Identifier, This:
+	case Identifier, This, Super:
 		expr = NewIdentifierExpr(token.GetLexeme())
 	case LeftParen:
 		expr, err = p.parseGroup()
