@@ -62,10 +62,12 @@ func (v *varInfo) endVarDecl(name string) {
 }
 
 type VariableResolver struct {
-	varInfo           *varInfo
-	err               error
-	withinMethod      bool
-	withinConstructor bool
+	varInfo                 *varInfo
+	err                     error
+	withinMethod            bool
+	withinConstructor       bool
+	withinDerivedClass      bool
+	identifierIsPathSegment bool
 }
 
 func NewVariableResolver() *VariableResolver {
@@ -213,9 +215,11 @@ func (v *VariableResolver) visitClassDef(c *ClassDef) {
 	for _, fn := range c.functions {
 		v.withinMethod = true
 		v.withinConstructor = fn.name == "init"
+		v.withinDerivedClass = c.superClass != ""
 		fn.accept(v)
 		v.withinMethod = false
 		v.withinConstructor = false
+		v.withinDerivedClass = false
 		if v.err != nil {
 			return
 		}
@@ -252,6 +256,16 @@ func (v *VariableResolver) visitIdentifierExpr(identifierExpr *IdentifierExpr) {
 		v.err = errors.New("'this' cannot be used outside of a method")
 		return
 	}
+	if identifierExpr.name == "super" {
+		if !v.withinDerivedClass {
+			v.err = errors.New("'super' can only be used within a method of a derived class")
+			return
+		}
+		if !v.identifierIsPathSegment {
+			v.err = errors.New("'super' cannot be used as a standalone variable")
+			return
+		}
+	}
 	identifierExpr.defLevel, v.err = v.varInfo.getLevel(identifierExpr.name)
 }
 
@@ -264,11 +278,20 @@ func (v *VariableResolver) visitUnaryExpr(unaryExpr *UnaryExpr) {
 }
 
 func (v *VariableResolver) visitBinaryExpr(expr *BinaryExpr) {
+	isPath := expr.Operator.GetLexeme() == "."
+
+	_, isIdent := expr.Left.(*IdentifierExpr)
+	v.identifierIsPathSegment = isPath && isIdent
 	expr.Left.accept(v)
+	v.identifierIsPathSegment = false
 	if v.err != nil {
 		return
 	}
+
+	_, isIdent = expr.Right.(*IdentifierExpr)
+	v.identifierIsPathSegment = isPath && isIdent
 	expr.Right.accept(v)
+	v.identifierIsPathSegment = false
 }
 
 func (v *VariableResolver) visitAssignment(assignment *Assignment) {
