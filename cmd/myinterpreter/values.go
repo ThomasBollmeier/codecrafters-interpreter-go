@@ -252,11 +252,16 @@ func (l *LambdaValue) call(args []Value) (Value, error) {
 
 type ClassValue struct {
 	name    string
+	super   *ClassValue
 	methods []LambdaValue
 }
 
-func NewClassValue(name string, methods []LambdaValue) *ClassValue {
-	return &ClassValue{name, methods}
+func NewClassValue(name string, super *ClassValue, methods []LambdaValue) *ClassValue {
+	return &ClassValue{
+		name:    name,
+		super:   super,
+		methods: methods,
+	}
 }
 
 func (c *ClassValue) getType() ValueType {
@@ -297,6 +302,9 @@ func (c *ClassValue) getMethod(name string) (*LambdaValue, error) {
 		if method.name == search {
 			return &method, nil
 		}
+	}
+	if c.super != nil {
+		return c.super.getMethod(name)
 	}
 	return nil, errors.New(fmt.Sprintf("no method with name %s found", name))
 }

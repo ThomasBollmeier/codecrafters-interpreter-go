@@ -124,12 +124,16 @@ func (f *ForStatement) accept(visitor AstVisitor) {
 }
 
 type ClassDef struct {
-	name      string
-	functions []FunctionDef
+	name       string
+	superClass string
+	functions  []FunctionDef
 }
 
-func NewClassDef(name string) *ClassDef {
-	return &ClassDef{name: name}
+func NewClassDef(name, superClass string) *ClassDef {
+	return &ClassDef{
+		name:       name,
+		superClass: superClass,
+	}
 }
 
 func (c *ClassDef) addFunction(function FunctionDef) {

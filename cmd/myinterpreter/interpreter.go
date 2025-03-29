@@ -198,6 +198,24 @@ func (interpreter *Interpreter) visitClassDef(c *ClassDef) {
 	var methods []LambdaValue
 	var method Value
 	var err error
+	var super *ClassValue
+	var ok bool
+
+	if c.superClass != "" {
+		value, errSuper := interpreter.env.Get(c.superClass)
+		if errSuper != nil {
+			interpreter.lastResult = nil
+			interpreter.lastError = errSuper
+			return
+		}
+		super, ok = value.(*ClassValue)
+		if !ok {
+			interpreter.lastResult = nil
+			interpreter.lastError = errors.New(fmt.Sprintf("class %s is not a class", c.superClass))
+			return
+		}
+	}
+
 	interpreter.env = NewEnvironment(interpreter.env)
 
 	for _, function := range c.functions {
@@ -211,7 +229,7 @@ func (interpreter *Interpreter) visitClassDef(c *ClassDef) {
 	interpreter.env = interpreter.env.parent
 
 	if err == nil {
-		class := NewClassValue(c.name, methods)
+		class := NewClassValue(c.name, super, methods)
 		interpreter.env.Set(c.name, class)
 		interpreter.lastResult = class
 		interpreter.lastError = nil

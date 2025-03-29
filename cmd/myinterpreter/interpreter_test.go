@@ -287,3 +287,23 @@ func TestInterpreter_Constructor(t *testing.T) {
 		t.Fatalf("interpreter.Run() error = %v", err)
 	}
 }
+
+func TestInterpreter_ClassWithSuperClass(t *testing.T) {
+	code := `
+		class Bar {
+			bar() {
+				print "wunderbar!";
+			}
+		}
+
+		class Foo < Bar {}
+
+		var foo = Foo();
+		foo.bar();`
+
+	interpreter := NewInterpreter(nil)
+	err, _ := interpreter.Run(code)
+	if err != nil {
+		t.Fatalf("interpreter.Run() error = %v", err)
+	}
+}

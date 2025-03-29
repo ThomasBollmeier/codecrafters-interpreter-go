@@ -315,12 +315,26 @@ func (p *Parser) parseClassDef() (AST, error) {
 		return nil, err
 	}
 
+	var superClass = ""
+	token, err := p.peek()
+	if err != nil {
+		return nil, err
+	}
+	if token.GetTokenType() == Less {
+		_, _ = p.advance()
+		superIdent, errSuper := p.consume(Identifier)
+		if errSuper != nil {
+			return nil, errSuper
+		}
+		superClass = superIdent.GetLexeme()
+	}
+
 	_, err = p.consume(LeftBrace)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := NewClassDef(ident.GetLexeme())
+	ret := NewClassDef(ident.GetLexeme(), superClass)
 
 	for {
 		nextToken, errPeek := p.peek()
